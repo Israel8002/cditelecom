@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import Button from '../Button';
 import Input from '../Input';
@@ -7,7 +7,9 @@ import { appConfig } from '../../catalogs/appConfig';
 // Renderiza una pregunta del catálogo según su tipo. No conoce ninguna pregunta concreta.
 export default function QuestionView({ question, value, onAnswer, onNext }) {
   const [local, setLocal] = useState(value ?? '');
+  const timerRef = useRef(null);
   useEffect(() => { setLocal(value ?? ''); }, [question.id, value]);
+  useEffect(() => () => { if (timerRef.current) clearTimeout(timerRef.current); }, []);
 
   const isOptionType = question.tipo === 'radio' || question.tipo === 'select';
 
@@ -15,7 +17,8 @@ export default function QuestionView({ question, value, onAnswer, onNext }) {
     onAnswer(opt);
     setLocal(opt);
     // Guardar y avanzar automáticamente.
-    setTimeout(() => onNext(), appConfig.autoAdvanceMs);
+    if (timerRef.current) clearTimeout(timerRef.current);
+    timerRef.current = setTimeout(() => onNext(), appConfig.autoAdvanceMs);
   };
 
   return (
