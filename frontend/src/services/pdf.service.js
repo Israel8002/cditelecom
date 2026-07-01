@@ -74,12 +74,27 @@ export async function generatePDF(evaluation, user) {
     'Folio Evaluación': evaluation.id,
     Fecha: `${evaluation.fecha}  ${evaluation.hora}`,
   };
-  pdfLayout.identification.forEach((label) => {
-    page.drawText(safeText(`${label}:`), { x: M, y, size: 9, font: bold, color: BLACK });
-    page.drawText(safeText(idValues[label] || ''), { x: M + 95, y, size: 9, font, color: BLACK });
-    y -= 14;
+  // Identificación en 2 columnas (sin marcos ni líneas, solo distribución)
+  const halfW = (W - 2 * M) / 2;
+  const idCols = [M, M + halfW];
+  const idPairs = [
+    ['Unidad', 'Cuarto'],
+    ['Evaluador', 'Folio Evaluación'],
+    ['Fecha', null],
+  ];
+  const drawIdField = (label, x, cy) => {
+    if (!label) return;
+    const lbl = safeText(`${label}:`);
+    page.drawText(lbl, { x, y: cy, size: 9, font: bold, color: BLACK });
+    const lw = bold.widthOfTextAtSize(lbl, 9);
+    page.drawText(safeText(idValues[label] || ''), { x: x + lw + 5, y: cy, size: 9, font, color: BLACK });
+  };
+  idPairs.forEach(([l, r]) => {
+    drawIdField(l, idCols[0], y);
+    drawIdField(r, idCols[1], y);
+    y -= 15;
   });
-  y -= 6;
+  y -= 4;
   page.drawLine({ start: { x: M, y }, end: { x: W - M, y }, thickness: 0.6, color: BLACK });
   y -= 16;
 

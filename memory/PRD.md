@@ -25,8 +25,13 @@ El PRD pedía Next.js 15 + TS. Por estabilidad en la plataforma Emergent (fronte
 - Configuración: datos evaluador (matrícula fija), info sistema, catálogos, acerca de.
 - PDF institucional (pdf-lib) tamaño Carta con secciones del formato 2025 (mapeo por pdfField) + nota legal + sello.
 
-## Backlog / Próximos pasos
-- P1: Ajuste fino del layout PDF vs. formato original (posiciones exactas, campos sin captura como Llaves/Tierra Física).
+## Cambios recientes (Jul 2026)
+- Fix PDF: `safeText()` normaliza subíndices (CO₂→CO2) — resolvía "WinAnsi cannot encode ₂".
+- Q011 objetos ajenos: opciones ahora Sí/No (Sí=conforme); recomendación "Retirar objetos ajenos en el cuarto." al responder No.
+- Nuevas preguntas mapeadas al PDF: Cuarto delimitado (Control), Corriente regulada / Tierra física Rack/Gab / Tierra física equipos (Energía-UPS), Nodos de voz y Nodos de voz funcionando (Infraestructura). Q021/Q022 renombradas a "nodos de datos instalados/funcionando".
+- PDF: bloque de identificación reordenado en 2 columnas sin marcos ni líneas.
+
+## Backlog / Próximos pasos- P1: Ajuste fino del layout PDF vs. formato original (posiciones exactas, campos sin captura como Llaves/Tierra Física).
 - P1: Reordenar/ampliar cuartos si el usuario entrega más datos.
 - P2: JsonViewer y PDFPreview embebidos (hoy se descarga/comparte).
 - P2: Íconos maskable definitivos / captura de pantalla para install prompt.

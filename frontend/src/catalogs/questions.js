@@ -86,7 +86,8 @@ export const questions = [
   {
     id: 'Q011', titulo: 'Existen objetos ajenos', descripcion: '¿El cuarto está libre de objetos ajenos?',
     seccion: 'seguridad', tipo: 'radio', required: true, orden: 110, peso: 10, criticidad: 'Alta',
-    visible: true, visibleIf: null, opciones: ['No', 'Sí'],
+    visible: true, visibleIf: null, opciones: ['Sí', 'No'],
+    recommendations: [{ when: 'No', text: 'Retirar objetos ajenos en el cuarto.' }],
     jsonField: 'objetosAjenos', pdfField: 'Libre de objetos ajenos',
   },
   {
@@ -161,21 +162,41 @@ export const questions = [
     visible: true, visibleIf: null, opciones: ['Cumple', 'No Cumple'],
     jsonField: 'calendarioMantenimiento', pdfField: 'Calendario Mantenimiento',
   },
+  {
+    id: 'Q045', titulo: 'Cuarto delimitado', descripcion: '¿El cuarto está debidamente delimitado?',
+    seccion: 'control', tipo: 'radio', required: true, orden: 208, peso: 5, criticidad: 'Media',
+    visible: true, visibleIf: null, opciones: ['Cumple', 'No Cumple'],
+    jsonField: 'cuartoDelimitado', pdfField: 'Cuarto Delimitado',
+  },
 
   // ---- INFRAESTRUCTURA ----
   {
-    id: 'Q021', titulo: 'Número de nodos instalados', descripcion: 'Captura la cantidad total de nodos.',
+    id: 'Q021', titulo: 'Número de nodos de datos instalados', descripcion: 'Captura la cantidad total de nodos de datos.',
     seccion: 'infraestructura', tipo: 'number', required: true, orden: 210, peso: 0, criticidad: 'Media',
     visible: true, visibleIf: null, placeholder: '0',
     validation: { min: 0, max: 100000 },
     jsonField: 'nodosInstalados', pdfField: 'Nodos de Datos',
   },
   {
-    id: 'Q022', titulo: 'Número de nodos funcionando', descripcion: 'Captura cuántos nodos funcionan.',
+    id: 'Q022', titulo: 'Número de nodos de datos funcionando', descripcion: 'Captura cuántos nodos de datos funcionan.',
     seccion: 'infraestructura', tipo: 'number', required: true, orden: 220, peso: 0, criticidad: 'Media',
     visible: true, visibleIf: null, placeholder: '0',
     validation: { min: 0, max: 100000 },
     jsonField: 'nodosFuncionando', pdfField: null,
+  },
+  {
+    id: 'Q049', titulo: 'Número de nodos de voz', descripcion: 'Captura la cantidad de nodos de voz.',
+    seccion: 'infraestructura', tipo: 'number', required: true, orden: 222, peso: 0, criticidad: 'Baja',
+    visible: true, visibleIf: null, placeholder: '0',
+    validation: { min: 0, max: 100000 },
+    jsonField: 'nodosVoz', pdfField: 'Nodos de Voz',
+  },
+  {
+    id: 'Q050', titulo: 'Número de nodos de voz funcionando', descripcion: 'Captura cuántos nodos de voz funcionan.',
+    seccion: 'infraestructura', tipo: 'number', required: true, orden: 224, peso: 0, criticidad: 'Baja',
+    visible: true, visibleIf: null, placeholder: '0',
+    validation: { min: 0, max: 100000 },
+    jsonField: 'nodosVozFuncionando', pdfField: null,
   },
   {
     id: 'Q023', titulo: 'Cableado dentro de canaletas', descripcion: 'Selecciona el estado actual.',
@@ -299,6 +320,24 @@ export const questions = [
     seccion: 'ups', tipo: 'radio', required: true, orden: 400, peso: 15, criticidad: 'Alta',
     visible: true, visibleIf: null, opciones: ['Funciona', 'No Funciona', 'Requiere Reemplazo'],
     jsonField: 'estadoUPS', pdfField: 'UPS Funcionando',
+  },
+  {
+    id: 'Q046', titulo: 'Corriente regulada', descripcion: 'Selecciona el estado actual.',
+    seccion: 'ups', tipo: 'radio', required: true, orden: 402, peso: 10, criticidad: 'Alta',
+    visible: true, visibleIf: null, opciones: ['Cumple', 'No Cumple'],
+    jsonField: 'corrienteRegulada', pdfField: 'Corriente Regulada',
+  },
+  {
+    id: 'Q047', titulo: 'Tierra física Rack/Gabinete', descripcion: 'Selecciona el estado actual.',
+    seccion: 'ups', tipo: 'radio', required: true, orden: 404, peso: 10, criticidad: 'Alta',
+    visible: true, visibleIf: null, opciones: ['Cumple', 'No Cumple'],
+    jsonField: 'tierraRack', pdfField: 'Tierra Física Rack/Gab',
+  },
+  {
+    id: 'Q048', titulo: 'Tierra física de equipos', descripcion: 'Selecciona el estado actual.',
+    seccion: 'ups', tipo: 'radio', required: true, orden: 406, peso: 10, criticidad: 'Alta',
+    visible: true, visibleIf: null, opciones: ['Cumple', 'No Cumple'],
+    jsonField: 'tierraEquipos', pdfField: 'Tierra Física Equipos',
   },
 
   // ---- OBSERVACIONES ----
