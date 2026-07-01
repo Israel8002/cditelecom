@@ -7,6 +7,13 @@ import { sanitizeName } from './format';
 const BLACK = rgb(0, 0, 0);
 const GRAY = rgb(0.45, 0.45, 0.45);
 
+// Reemplaza caracteres no soportados por la codificación WinAnsi de las fuentes estándar
+// (p. ej. subíndices como ₂ de "CO₂") para evitar que pdf-lib lance excepción al dibujar.
+const SUBSCRIPTS = { '₀': '0', '₁': '1', '₂': '2', '₃': '3', '₄': '4', '₅': '5', '₆': '6', '₇': '7', '₈': '8', '₉': '9' };
+function safeText(t) {
+  return String(t == null ? '' : t).replace(/[₀₁₂₃₄₅₆₇₈₉]/g, (m) => SUBSCRIPTS[m] || m);
+}
+
 // Resuelve el valor a mostrar para una fila del PDF (campo del catálogo o vacío).
 function resolveFieldValue(fields, field) {
   if (!field) return '';
@@ -68,8 +75,8 @@ export async function generatePDF(evaluation, user) {
     Fecha: `${evaluation.fecha}  ${evaluation.hora}`,
   };
   pdfLayout.identification.forEach((label) => {
-    page.drawText(`${label}:`, { x: M, y, size: 9, font: bold, color: BLACK });
-    page.drawText(String(idValues[label] || ''), { x: M + 95, y, size: 9, font, color: BLACK });
+    page.drawText(safeText(`${label}:`), { x: M, y, size: 9, font: bold, color: BLACK });
+    page.drawText(safeText(idValues[label] || ''), { x: M + 95, y, size: 9, font, color: BLACK });
     y -= 14;
   });
   y -= 6;
@@ -85,8 +92,8 @@ export async function generatePDF(evaluation, user) {
   const drawRow = (col, label, value) => {
     const x = colX[col];
     let cy = yCol[col];
-    page.drawText(label, { x, y: cy, size: 8.5, font, color: BLACK });
-    const v = value || '';
+    page.drawText(safeText(label), { x, y: cy, size: 8.5, font, color: BLACK });
+    const v = safeText(value || '');
     const vw = bold.widthOfTextAtSize(v, 8.5);
     page.drawText(v, { x: x + colW - vw, y: cy, size: 8.5, font: bold, color: BLACK });
     cy -= 6;
@@ -99,7 +106,7 @@ export async function generatePDF(evaluation, user) {
     // título de sección
     yCol[col] -= 2;
     page.drawRectangle({ x: colX[col], y: yCol[col] - 2, width: colW, height: 14, color: rgb(0.9, 0.9, 0.9) });
-    page.drawText(sec.title, { x: colX[col] + 4, y: yCol[col] + 1.5, size: 9, font: bold, color: BLACK });
+    page.drawText(safeText(sec.title), { x: colX[col] + 4, y: yCol[col] + 1.5, size: 9, font: bold, color: BLACK });
     yCol[col] -= 18;
     sec.rows.forEach((r) => {
       drawRow(col, r.label, resolveFieldValue(fields, r.field));
@@ -118,12 +125,12 @@ export async function generatePDF(evaluation, user) {
   const obsBoxHeight = 120;
 
   page.drawText('OBSERVACIONES', { x: M, y: rowTop, size: 10, font: bold, color: BLACK });
-  page.drawText(pdfLayout.sealLabel, { x: sealX, y: rowTop, size: 9, font: bold, color: BLACK });
+  page.drawText(safeText(pdfLayout.sealLabel), { x: sealX, y: rowTop, size: 9, font: bold, color: BLACK });
 
   page.drawRectangle({ x: M, y: obsBoxTop - obsBoxHeight, width: obsW, height: obsBoxHeight, borderColor: BLACK, borderWidth: 0.6 });
   page.drawRectangle({ x: sealX, y: obsBoxTop - obsBoxHeight, width: sealW, height: obsBoxHeight, borderColor: GRAY, borderWidth: 0.8, borderDashArray: [3, 3] });
 
-  const obsText = (evaluation.observaciones || []).map((o) => `• ${o.text}`).join('\n');
+  const obsText = (evaluation.observaciones || []).map((o) => `• ${safeText(o.text)}`).join('\n');
   const obsLines = obsText ? obsText.split('\n').flatMap((l) => wrapText(l, font, 9, obsW - 12)) : [];
   let ty = obsBoxTop - 14;
   obsLines.slice(0, 8).forEach((l) => {
@@ -133,14 +140,14 @@ export async function generatePDF(evaluation, user) {
 
   // Nota legal
   let ly = obsBoxTop - obsBoxHeight - 16;
-  page.drawText(pdfLayout.legalTitle, { x: M, y: ly, size: 8, font: bold, color: BLACK });
+  page.drawText(safeText(pdfLayout.legalTitle), { x: M, y: ly, size: 8, font: bold, color: BLACK });
   ly -= 11;
-  wrapText(pdfLayout.legalText, font, 7, W - 2 * M).forEach((l) => {
+  wrapText(safeText(pdfLayout.legalText), font, 7, W - 2 * M).forEach((l) => {
     page.drawText(l, { x: M, y: ly, size: 7, font, color: BLACK });
     ly -= 9;
   });
   ly -= 4;
-  wrapText(pdfLayout.legalRef, font, 7, W - 2 * M).forEach((l) => {
+  wrapText(safeText(pdfLayout.legalRef), font, 7, W - 2 * M).forEach((l) => {
     page.drawText(l, { x: M, y: ly, size: 7, font: bold, color: BLACK });
     ly -= 9;
   });
