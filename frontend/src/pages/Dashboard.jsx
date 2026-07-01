@@ -1,17 +1,19 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Plus, ClipboardList, Database, Settings, AlertCircle } from 'lucide-react';
+import { Plus, ClipboardList, Database, Settings, AlertCircle, Trash2 } from 'lucide-react';
 import Card from '../components/Card';
 import StatsCard from '../components/StatsCard';
 import Button from '../components/Button';
+import ConfirmDialog from '../components/ConfirmDialog';
 import { useUserStore } from '../stores/user.store';
 import { useEvaluationStore } from '../stores/evaluation.store';
-import { getAllEvaluations, getAllBackups, getConfig, getDraft } from '../services/storage.service';
+import { getAllEvaluations, getAllBackups, getConfig, getDraft, deleteEvaluationCascade } from '../services/storage.service';
 import { getCityName, getUnitById, getRoomById } from '../services/catalog.service';
 import { formatDate, formatTime, formatDateLong } from '../services/format';
 import { appConfig } from '../catalogs/appConfig';
 import { ESTADO } from '../catalogs/constants';
+import { logEvent, LOG } from '../services/log.service';
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -22,6 +24,7 @@ export default function Dashboard() {
   const [stats, setStats] = useState({ realizadas: 0, respaldos: 0, pendientes: 0, ultima: null });
   const [recent, setRecent] = useState([]);
   const [draft, setDraft] = useState(null);
+  const [confirmDraft, setConfirmDraft] = useState(false);
   const [now] = useState(new Date());
 
   const refresh = async () => {
@@ -54,6 +57,12 @@ export default function Dashboard() {
     loadInto(draft);
     navigate('/evaluacion');
   };
+  const deleteDraft = async () => {
+    if (draft) { await deleteEvaluationCascade(draft.id); await logEvent(LOG.ELIMINAR, draft.id); }
+    setConfirmDraft(false);
+    setDraft(null);
+    refresh();
+  };
 
   const unitName = (u) => getUnitById(u)?.nombre || u;
   const roomName = (r) => getRoomById(r)?.nombre || r;
@@ -83,13 +92,20 @@ export default function Dashboard() {
           <Card className="border border-[hsl(var(--warning)/0.4)]" testId="draft-banner">
             <div className="flex items-start gap-3">
               <AlertCircle size={22} className="text-[hsl(var(--warning))] shrink-0 mt-0.5" />
-              <div className="flex-1">
+              <div className="flex-1 min-w-0">
                 <p className="font-semibold" style={{ fontWeight: 600 }}>Tienes una evaluación pendiente.</p>
                 <p className="text-sm text-[hsl(var(--muted-foreground))] mt-1">{draft.id}</p>
                 <div className="mt-3">
                   <Button onClick={continueDraft} testId="draft-continue-btn">Continuar</Button>
                 </div>
               </div>
+              <button
+                onClick={() => setConfirmDraft(true)} data-testid="draft-delete-btn"
+                className="h-9 w-9 flex items-center justify-center rounded-full bg-[hsl(var(--muted))] shrink-0"
+                aria-label="Eliminar evaluación pendiente"
+              >
+                <Trash2 size={17} className="text-destructive" />
+              </button>
             </div>
           </Card>
         </div>
@@ -138,6 +154,14 @@ export default function Dashboard() {
           </div>
         )}
       </div>
+
+      <ConfirmDialog
+        open={confirmDraft}
+        title="¿Eliminar evaluación pendiente?"
+        description="Se eliminará el borrador y sus fotografías. Esta acción no puede deshacerse."
+        onConfirm={deleteDraft}
+        onCancel={() => setConfirmDraft(false)}
+      />
     </div>
   );
 }

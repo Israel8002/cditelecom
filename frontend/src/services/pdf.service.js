@@ -101,15 +101,24 @@ export async function generatePDF(evaluation, user) {
     yCol[col] -= 6;
   });
 
-  // Observaciones
-  let oy = Math.min(yCol[0], yCol[1]) - 4;
-  page.drawText('OBSERVACIONES', { x: M, y: oy, size: 10, font: bold, color: BLACK });
-  oy -= 6;
-  const obsBoxTop = oy;
+  // Observaciones + Sello de la Unidad (misma fila, misma altura)
+  const rowTop = Math.min(yCol[0], yCol[1]) - 4;
+  const totalW = W - 2 * M;
+  const gapOS = 12;
+  const obsW = Math.round(totalW * 0.62);
+  const sealW = totalW - obsW - gapOS;
+  const sealX = M + obsW + gapOS;
+  const obsBoxTop = rowTop - 6;
   const obsBoxHeight = 120;
-  page.drawRectangle({ x: M, y: obsBoxTop - obsBoxHeight, width: W - 2 * M, height: obsBoxHeight, borderColor: BLACK, borderWidth: 0.6 });
+
+  page.drawText('OBSERVACIONES', { x: M, y: rowTop, size: 10, font: bold, color: BLACK });
+  page.drawText(pdfLayout.sealLabel, { x: sealX, y: rowTop, size: 9, font: bold, color: BLACK });
+
+  page.drawRectangle({ x: M, y: obsBoxTop - obsBoxHeight, width: obsW, height: obsBoxHeight, borderColor: BLACK, borderWidth: 0.6 });
+  page.drawRectangle({ x: sealX, y: obsBoxTop - obsBoxHeight, width: sealW, height: obsBoxHeight, borderColor: GRAY, borderWidth: 0.8, borderDashArray: [3, 3] });
+
   const obsText = (evaluation.observaciones || []).map((o) => `• ${o.text}`).join('\n');
-  const obsLines = obsText ? obsText.split('\n').flatMap((l) => wrapText(l, font, 9, W - 2 * M - 12)) : [];
+  const obsLines = obsText ? obsText.split('\n').flatMap((l) => wrapText(l, font, 9, obsW - 12)) : [];
   let ty = obsBoxTop - 14;
   obsLines.slice(0, 8).forEach((l) => {
     page.drawText(l, { x: M + 6, y: ty, size: 9, font, color: BLACK });
@@ -125,19 +134,10 @@ export async function generatePDF(evaluation, user) {
     ly -= 9;
   });
   ly -= 4;
-  wrapText(pdfLayout.legalRef, font, 7, W - 2 * M - 150).forEach((l) => {
+  wrapText(pdfLayout.legalRef, font, 7, W - 2 * M).forEach((l) => {
     page.drawText(l, { x: M, y: ly, size: 7, font: bold, color: BLACK });
     ly -= 9;
   });
-
-  // Sello (recuadro punteado simulado con borde)
-  const sealW = 150;
-  const sealH = 60;
-  const sealX = W - M - sealW;
-  const sealY = M;
-  page.drawRectangle({ x: sealX, y: sealY, width: sealW, height: sealH, borderColor: GRAY, borderWidth: 0.8, borderDashArray: [3, 3] });
-  const slw = font.widthOfTextAtSize(pdfLayout.sealLabel, 8);
-  page.drawText(pdfLayout.sealLabel, { x: sealX + (sealW - slw) / 2, y: sealY + sealH / 2 - 3, size: 8, font, color: GRAY });
 
   return doc.save();
 }
