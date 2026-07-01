@@ -151,7 +151,10 @@ function StepPhotos({ evaluationId, onNext }) {
   const galRef = useRef(null);
 
   const reload = async () => setPhotos(await getPhotos(evaluationId));
-  useEffect(() => { reload(); }, [evaluationId]);
+  useEffect(() => {
+    reload();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [evaluationId]);
 
   const onFiles = async (e) => {
     const files = Array.from(e.target.files || []);
@@ -218,7 +221,7 @@ function StepResumen({ evaluation, user, onSave }) {
           <p className="font-semibold mb-2" style={{ fontWeight: 600 }}>Observaciones</p>
           <ul className="flex flex-col gap-2">
             {obs.map((o, i) => (
-              <li key={i} className="flex items-start gap-2 text-sm">
+              <li key={`${o.text}-${i}`} className="flex items-start gap-2 text-sm">
                 <Check size={16} className="text-primary mt-0.5 shrink-0" />
                 <span>{o.text}</span>
               </li>

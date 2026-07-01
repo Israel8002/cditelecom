@@ -27,7 +27,8 @@ export async function logEvent(tipo, descripcion = '') {
     });
     await pruneLogs();
   } catch (e) {
-    // Nunca interrumpir la app por un error de log.
+    // Nunca interrumpir la app por un error de log; registrar en consola para diagnóstico.
+    console.error('log.service: no se pudo escribir el log', e);
   }
 }
 

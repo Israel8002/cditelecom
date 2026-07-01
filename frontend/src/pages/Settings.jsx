@@ -24,7 +24,10 @@ export default function Settings() {
   const [sys, setSys] = useState({ evals: 0, fotos: 0, backups: 0, usage: 0 });
   const cat = getCatalogStats();
 
-  useEffect(() => { if (!user) loadUser(); }, []);
+  useEffect(() => {
+    if (!user) loadUser();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     if (user) setForm({ nombre: user.nombre, correo: user.correo, celular: user.celular, ciudad: user.ciudad, unidad: String(user.unidad) });
@@ -35,6 +38,7 @@ export default function Settings() {
       const est = await getStorageEstimate();
       setSys({ evals: await countEvaluations(), fotos: await countPhotos(), backups: await countBackups(), usage: est.usage });
     })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   if (!form) return null;

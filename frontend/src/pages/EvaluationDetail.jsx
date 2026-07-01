@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { toast } from 'sonner';
 import { FileText, FileJson, Trash2, Download, Share2, Image as ImageIcon, Home } from 'lucide-react';
@@ -25,14 +25,14 @@ export default function EvaluationDetail() {
   const [genPdf, setGenPdf] = useState(false);
   const [genJson, setGenJson] = useState(false);
 
-  const load = async () => {
+  const load = useCallback(async () => {
     const e = await getEvaluation(id);
     setEvaluation(e);
     setPhotos(await getPhotos(id));
     setBackup(await getBackupByEvaluation(id));
     if (!user) loadUser();
-  };
-  useEffect(() => { load(); }, [id]);
+  }, [id, user, loadUser]);
+  useEffect(() => { load(); }, [load]);
 
   if (!evaluation) return <div className="app-shell"><PageHeader title="Detalle" onBack={() => navigate(-1)} /></div>;
 
@@ -47,7 +47,7 @@ export default function EvaluationDetail() {
     const v = answers[q.id];
     if (v === undefined || v === '' || v === null) return;
     if (q.id === 'Q041') return;
-    (sectionsData[q.seccion] = sectionsData[q.seccion] || []).push({ titulo: q.titulo, value: v });
+    (sectionsData[q.seccion] = sectionsData[q.seccion] || []).push({ id: q.id, titulo: q.titulo, value: v });
   });
 
   const handleGeneratePdf = async () => {
@@ -131,8 +131,8 @@ export default function EvaluationDetail() {
           <Card key={sec}>
             <p className="font-semibold mb-3" style={{ fontWeight: 600 }}>{getSectionName(sec)}</p>
             <div className="flex flex-col divide-y divide-[hsl(var(--border))]">
-              {list.map((r, i) => (
-                <div key={i} className="flex justify-between gap-4 py-2.5 first:pt-0">
+              {list.map((r) => (
+                <div key={r.id} className="flex justify-between gap-4 py-2.5 first:pt-0">
                   <span className="text-[hsl(var(--muted-foreground))] text-sm">{r.titulo}</span>
                   <span className="font-medium text-right text-sm" style={{ fontWeight: 500 }}>{String(r.value)}</span>
                 </div>
@@ -146,7 +146,7 @@ export default function EvaluationDetail() {
           <Card>
             <p className="font-semibold mb-2" style={{ fontWeight: 600 }}>Observaciones</p>
             <ul className="list-disc pl-5 flex flex-col gap-1.5 text-sm">
-              {evaluation.observaciones.map((o, i) => <li key={i}>{o.text}</li>)}
+              {evaluation.observaciones.map((o, i) => <li key={`${o.text}-${i}`}>{o.text}</li>)}
             </ul>
           </Card>
         )}

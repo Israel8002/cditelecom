@@ -7,6 +7,13 @@ import { sanitizeName } from './format';
 const BLACK = rgb(0, 0, 0);
 const GRAY = rgb(0.45, 0.45, 0.45);
 
+// Resuelve el valor a mostrar para una fila del PDF (campo del catálogo o vacío).
+function resolveFieldValue(fields, field) {
+  if (!field) return '';
+  const v = fields[field];
+  return v != null ? String(v) : '—';
+}
+
 function wrapText(text, font, size, maxWidth) {
   const words = String(text).split(/\s+/);
   const lines = [];
@@ -95,8 +102,7 @@ export async function generatePDF(evaluation, user) {
     page.drawText(sec.title, { x: colX[col] + 4, y: yCol[col] + 1.5, size: 9, font: bold, color: BLACK });
     yCol[col] -= 18;
     sec.rows.forEach((r) => {
-      const val = r.field ? (fields[r.field] != null ? String(fields[r.field]) : '—') : '';
-      drawRow(col, r.label, val);
+      drawRow(col, r.label, resolveFieldValue(fields, r.field));
     });
     yCol[col] -= 6;
   });

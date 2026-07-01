@@ -23,7 +23,7 @@ export default function History() {
   useEffect(() => {
     getAllEvaluations().then((all) => setItems(all.filter((e) => e.estado !== 'borrador')));
     if (!user) loadUser();
-  }, []);
+  }, [user, loadUser]);
 
   const unitName = (u) => getUnitById(u)?.nombre || String(u);
   const roomName = (r) => getRoomById(r)?.nombre || String(r);

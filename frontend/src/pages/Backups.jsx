@@ -31,7 +31,10 @@ export default function Backups() {
     const allLogs = await getLogs();
     setLogs(allLogs.filter((l) => [LOG.PDF, LOG.JSON, LOG.RESPALDO, LOG.DESCARGA].includes(l.tipo)).slice(0, 50));
   };
-  useEffect(() => { load(); }, []);
+  useEffect(() => {
+    load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const unitName = (u) => getUnitById(u)?.nombre || String(u);
   const roomName = (r) => getRoomById(r)?.nombre || String(r);
@@ -83,7 +86,7 @@ export default function Backups() {
           <Card padding="p-0">
             <div className="flex flex-col divide-y divide-[hsl(var(--border))]">
               {logs.map((l, i) => (
-                <div key={i} className="flex justify-between gap-3 px-4 py-3">
+                <div key={`${l.fechaISO || l.fecha}-${i}`} className="flex justify-between gap-3 px-4 py-3">
                   <div>
                     <p className="text-sm font-medium" style={{ fontWeight: 500 }}>{l.tipo}</p>
                     <p className="text-xs text-[hsl(var(--muted-foreground))] truncate max-w-[200px]">{l.descripcion}</p>
