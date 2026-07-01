@@ -20,7 +20,7 @@ export const pdfLayout = {
     {
       title: 'SEGURIDAD BÁSICA',
       rows: [
-        { label: 'Llaves', field: null },
+        { label: 'Llaves', field: 'llaves' },
         { label: 'Libre de objetos ajenos', field: 'objetosAjenos' },
         { label: 'Extintor CO2', field: 'extintor' },
         { label: 'Detector de Humo', field: 'detectorHumo' },
@@ -36,8 +36,8 @@ export const pdfLayout = {
         { label: 'Termómetro', field: 'termometro' },
         { label: 'Temperatura 18-24°C', field: 'temperatura' },
         { label: 'Bitácora Accesos', field: 'bitacora' },
-        { label: 'Bitácora Mantenimiento', field: 'bitacora' },
-        { label: 'Calendario Mantenimiento', field: 'programaMantenimiento' },
+        { label: 'Bitácora Mantenimiento', field: 'bitacoraMantenimiento' },
+        { label: 'Calendario Mantenimiento', field: 'calendarioMantenimiento' },
       ],
     },
     {

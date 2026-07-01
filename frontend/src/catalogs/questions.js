@@ -78,6 +78,12 @@ export const questions = [
 
   // ---- SEGURIDAD ----
   {
+    id: 'Q044', titulo: 'Llaves de acceso restringido', descripcion: '¿El acceso está restringido con llaves/control?',
+    seccion: 'seguridad', tipo: 'radio', required: true, orden: 105, peso: 10, criticidad: 'Alta',
+    visible: true, visibleIf: null, opciones: ['Cumple', 'No Cumple'],
+    jsonField: 'llaves', pdfField: 'Llaves',
+  },
+  {
     id: 'Q011', titulo: 'Existen objetos ajenos', descripcion: '¿El cuarto está libre de objetos ajenos?',
     seccion: 'seguridad', tipo: 'radio', required: true, orden: 110, peso: 10, criticidad: 'Alta',
     visible: true, visibleIf: null, opciones: ['No', 'Sí'],
@@ -96,8 +102,8 @@ export const questions = [
     jsonField: 'sistemaIndependiente', pdfField: 'Sistema Independiente',
   },
   {
-    id: 'Q014', titulo: 'Existe bitácora', descripcion: 'Bitácora de accesos y mantenimiento.',
-    seccion: 'seguridad', tipo: 'radio', required: true, orden: 140, peso: 5, criticidad: 'Media',
+    id: 'Q014', titulo: 'Existe bitácora de accesos', descripcion: 'Bitácora de accesos al cuarto.',
+    seccion: 'control', tipo: 'radio', required: true, orden: 202, peso: 5, criticidad: 'Media',
     visible: true, visibleIf: null, opciones: ['Cumple', 'No Cumple'],
     jsonField: 'bitacora', pdfField: 'Bitácora Accesos',
   },
@@ -142,6 +148,18 @@ export const questions = [
     seccion: 'control', tipo: 'radio', required: true, orden: 200, peso: 10, criticidad: 'Alta',
     visible: true, visibleIf: null, opciones: ['Cumple', 'No Cumple'],
     jsonField: 'diagramaRed', pdfField: 'Diagrama de Red',
+  },
+  {
+    id: 'Q042', titulo: 'Existe bitácora de mantenimiento', descripcion: 'Bitácora de mantenimiento del cuarto.',
+    seccion: 'control', tipo: 'radio', required: true, orden: 204, peso: 5, criticidad: 'Media',
+    visible: true, visibleIf: null, opciones: ['Cumple', 'No Cumple'],
+    jsonField: 'bitacoraMantenimiento', pdfField: 'Bitácora Mantenimiento',
+  },
+  {
+    id: 'Q043', titulo: 'Existe calendario de mantenimiento', descripcion: 'Calendario/programa de mantenimiento visible.',
+    seccion: 'control', tipo: 'radio', required: true, orden: 206, peso: 5, criticidad: 'Media',
+    visible: true, visibleIf: null, opciones: ['Cumple', 'No Cumple'],
+    jsonField: 'calendarioMantenimiento', pdfField: 'Calendario Mantenimiento',
   },
 
   // ---- INFRAESTRUCTURA ----
@@ -197,7 +215,7 @@ export const questions = [
     id: 'Q028', titulo: 'Existe programa de mantenimiento', descripcion: 'Selecciona el estado actual.',
     seccion: 'equipos', tipo: 'radio', required: true, orden: 280, peso: 10, criticidad: 'Alta',
     visible: true, visibleIf: null, opciones: ['Cumple', 'No Cumple'],
-    jsonField: 'programaMantenimiento', pdfField: 'Calendario Mantenimiento',
+    jsonField: 'programaMantenimiento', pdfField: null,
   },
   {
     id: 'Q029', titulo: 'Equipos (servidores) actualizados', descripcion: 'Selecciona el estado actual.',

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { toast } from 'sonner';
-import { FileText, FileJson, Trash2, Download, Share2, Image as ImageIcon } from 'lucide-react';
+import { FileText, FileJson, Trash2, Download, Share2, Image as ImageIcon, Home } from 'lucide-react';
 import PageHeader from '../components/PageHeader';
 import Card from '../components/Card';
 import Button from '../components/Button';
@@ -9,7 +9,7 @@ import ConfirmDialog from '../components/ConfirmDialog';
 import { getEvaluation, getPhotos, deleteEvaluationCascade, getBackupByEvaluation } from '../services/storage.service';
 import { getUnitById, getRoomById, getCityName, getAllQuestions, isQuestionVisible, getSectionName, computeScore } from '../services/catalog.service';
 import { useUserStore } from '../stores/user.store';
-import { generateBackup, downloadBlob, shareFile } from '../services/backup.service';
+import { generatePdf, generateJson, downloadBlob, shareFile } from '../services/backup.service';
 import { logEvent, LOG } from '../services/log.service';
 import { TXT, ESTADO } from '../catalogs/constants';
 
@@ -22,7 +22,8 @@ export default function EvaluationDetail() {
   const [photos, setPhotos] = useState([]);
   const [backup, setBackup] = useState(null);
   const [confirm, setConfirm] = useState(false);
-  const [gen, setGen] = useState(false);
+  const [genPdf, setGenPdf] = useState(false);
+  const [genJson, setGenJson] = useState(false);
 
   const load = async () => {
     const e = await getEvaluation(id);
@@ -49,17 +50,28 @@ export default function EvaluationDetail() {
     (sectionsData[q.seccion] = sectionsData[q.seccion] || []).push({ titulo: q.titulo, value: v });
   });
 
-  const handleGenerate = async () => {
-    setGen(true);
+  const handleGeneratePdf = async () => {
+    setGenPdf(true);
     try {
-      const b = await generateBackup(evaluation, user);
-      setBackup(b);
-      await load();
-      toast.success('Archivo generado correctamente.');
+      const b = await generatePdf(evaluation, user);
+      setBackup(b); await load();
+      toast.success('PDF generado correctamente.');
     } catch (e) {
-      await logEvent(LOG.ERROR, `PDF/JSON: ${e.message}`);
+      await logEvent(LOG.ERROR, `PDF: ${e.message}`);
+      toast.error(TXT.errPDF);
+    } finally { setGenPdf(false); }
+  };
+
+  const handleGenerateJson = async () => {
+    setGenJson(true);
+    try {
+      const b = await generateJson(evaluation, user);
+      setBackup(b); await load();
+      toast.success('JSON generado correctamente.');
+    } catch (e) {
+      await logEvent(LOG.ERROR, `JSON: ${e.message}`);
       toast.error(TXT.errRespaldo);
-    } finally { setGen(false); }
+    } finally { setGenJson(false); }
   };
 
   const handleDelete = async () => {
@@ -142,20 +154,30 @@ export default function EvaluationDetail() {
         {/* Archivos */}
         <Card>
           <p className="font-semibold mb-3" style={{ fontWeight: 600 }}>Archivos</p>
-          {!backup ? (
-            <Button onClick={handleGenerate} loading={gen} icon={FileText} testId="detail-generate-btn">Generar PDF y JSON</Button>
-          ) : (
-            <div className="flex flex-col gap-2">
-              <p className="text-sm text-[hsl(var(--success))] mb-1">Archivos generados correctamente.</p>
+          <div className="flex flex-col gap-3">
+            {/* PDF */}
+            {!backup?.pdf ? (
+              <Button onClick={handleGeneratePdf} loading={genPdf} icon={FileText} testId="detail-generate-pdf">Generar PDF</Button>
+            ) : (
               <div className="grid grid-cols-2 gap-2">
-                <Button variant="secondary" icon={Download} onClick={() => { downloadBlob(backup.pdf, backup.pdfNombre); logEvent(LOG.DESCARGA, backup.pdfNombre); }} testId="detail-download-pdf">PDF</Button>
-                <Button variant="secondary" icon={Download} onClick={() => { downloadBlob(backup.json, backup.jsonNombre, 'application/json'); logEvent(LOG.DESCARGA, backup.jsonNombre); }} testId="detail-download-json">JSON</Button>
+                <Button variant="secondary" icon={Download} onClick={() => { downloadBlob(backup.pdf, backup.pdfNombre); logEvent(LOG.DESCARGA, backup.pdfNombre); }} testId="detail-download-pdf">Descargar PDF</Button>
                 <Button variant="outline" icon={Share2} onClick={() => shareFile(backup.pdf, backup.pdfNombre)} testId="detail-share-pdf">Compartir PDF</Button>
-                <Button variant="outline" icon={FileJson} onClick={() => shareFile(backup.json, backup.jsonNombre, 'application/json')} testId="detail-share-json">Compartir JSON</Button>
               </div>
-            </div>
-          )}
+            )}
+            {/* JSON */}
+            {!backup?.json ? (
+              <Button onClick={handleGenerateJson} loading={genJson} icon={FileJson} testId="detail-generate-json">Generar JSON</Button>
+            ) : (
+              <div className="grid grid-cols-2 gap-2">
+                <Button variant="secondary" icon={Download} onClick={() => { downloadBlob(backup.json, backup.jsonNombre, 'application/json'); logEvent(LOG.DESCARGA, backup.jsonNombre); }} testId="detail-download-json">Descargar JSON</Button>
+                <Button variant="outline" icon={Share2} onClick={() => shareFile(backup.json, backup.jsonNombre, 'application/json')} testId="detail-share-json">Compartir JSON</Button>
+              </div>
+            )}
+          </div>
         </Card>
+
+        {/* Regresar al inicio */}
+        <Button icon={Home} onClick={() => navigate('/dashboard')} testId="detail-home-btn">Regresar al Inicio</Button>
       </div>
 
       <ConfirmDialog open={confirm} title={TXT.confirmEliminar} description={TXT.confirmEliminarDesc}

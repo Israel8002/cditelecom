@@ -1,33 +1,55 @@
 import { generatePDF, pdfFileName } from './pdf.service';
 import { buildEvaluationObject, serializeJSON, jsonFileName } from './json.service';
-import { saveBackup, saveEvaluation, getPhotos, setConfig } from './storage.service';
+import { saveBackup, saveEvaluation, getPhotos, getBackupByEvaluation, setConfig } from './storage.service';
 import { logEvent, LOG } from './log.service';
 import { ESTADO } from '../catalogs/constants';
 
-// Genera PDF + JSON y los almacena localmente. Devuelve el respaldo.
-export async function generateBackup(evaluation, user) {
-  const photos = await getPhotos(evaluation.id);
-  const pdfBytes = await generatePDF(evaluation, user);
-  const jsonObj = buildEvaluationObject(evaluation, user, photos);
-  const jsonStr = serializeJSON(jsonObj);
-
-  const backup = await saveBackup({
+// Combina el respaldo existente con nuevos campos (permite generar PDF y JSON por separado).
+async function upsertBackup(evaluation, patch) {
+  const existing = await getBackupByEvaluation(evaluation.id);
+  const merged = {
     id: evaluation.id,
     idEvaluacion: evaluation.id,
-    pdf: new Blob([pdfBytes], { type: 'application/pdf' }),
-    pdfNombre: pdfFileName(evaluation),
-    json: jsonStr,
-    jsonNombre: jsonFileName(evaluation),
-    fecha: new Date().toISOString(),
     estado: 'generado',
-  });
-
+    ...(existing || {}),
+    ...patch,
+    fecha: new Date().toISOString(),
+  };
+  await saveBackup(merged);
   await saveEvaluation({ ...evaluation, estado: ESTADO.RESPALDADO });
   await setConfig('ultimoRespaldo', new Date().toISOString());
-  await logEvent(LOG.PDF, `${backup.pdfNombre}`);
-  await logEvent(LOG.JSON, `${backup.jsonNombre}`);
+  return merged;
+}
+
+// Genera únicamente el PDF y lo almacena localmente.
+export async function generatePdf(evaluation, user) {
+  const pdfBytes = await generatePDF(evaluation, user);
+  const b = await upsertBackup(evaluation, {
+    pdf: new Blob([pdfBytes], { type: 'application/pdf' }),
+    pdfNombre: pdfFileName(evaluation),
+  });
+  await logEvent(LOG.PDF, b.pdfNombre);
+  return b;
+}
+
+// Genera únicamente el JSON y lo almacena localmente.
+export async function generateJson(evaluation, user) {
+  const photos = await getPhotos(evaluation.id);
+  const jsonStr = serializeJSON(buildEvaluationObject(evaluation, user, photos));
+  const b = await upsertBackup(evaluation, {
+    json: jsonStr,
+    jsonNombre: jsonFileName(evaluation),
+  });
+  await logEvent(LOG.JSON, b.jsonNombre);
+  return b;
+}
+
+// Genera PDF + JSON (respaldo completo).
+export async function generateBackup(evaluation, user) {
+  await generatePdf(evaluation, user);
+  const b = await generateJson(evaluation, user);
   await logEvent(LOG.RESPALDO, evaluation.id);
-  return backup;
+  return b;
 }
 
 export function downloadBlob(blobOrString, filename, type) {
