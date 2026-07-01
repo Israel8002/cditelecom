@@ -1,0 +1,25 @@
+// Configuración global de la aplicación. Toda configuración futura se agrega aquí.
+export const appConfig = {
+  version: '1.0.0',
+  appName: 'Sistema de Evaluación de Cuartos de Telecomunicaciones',
+  appShortName: 'Telecom IMSS',
+  author: 'LSC Israel Díaz Serrano',
+  institution: 'Instituto Mexicano del Seguro Social',
+  department: 'Coordinación Delegacional de Informática',
+  dateFormat: 'DD/MM/YYYY',
+  timeFormat: 'HH:mm:ss',
+  maxLogRecords: 5000,
+  maxBackupLogRecords: 1000,
+  splashDurationMs: 2000,
+  autoAdvanceMs: 400,
+  transitionMs: 250,
+  colors: {
+    primary: '#1F9D57',
+    primaryDark: '#14633A',
+    background: '#0E0F11',
+    card: '#16181B',
+    success: '#1F9D57',
+    warning: '#E0A800',
+    error: '#DC3545',
+  },
+};
