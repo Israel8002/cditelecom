@@ -9,6 +9,8 @@ import History from '@/pages/History';
 import EvaluationDetail from '@/pages/EvaluationDetail';
 import Backups from '@/pages/Backups';
 import Settings from '@/pages/Settings';
+import Inventory from '@/pages/Inventory';
+import NewEquipment from '@/pages/NewEquipment';
 
 function App() {
   return (
@@ -23,6 +25,9 @@ function App() {
         <Route path="/detalle/:id" element={<EvaluationDetail />} />
         <Route path="/respaldos" element={<Backups />} />
         <Route path="/configuracion" element={<Settings />} />
+        <Route path="/inventario" element={<Inventory />} />
+        <Route path="/inventario/nuevo" element={<NewEquipment />} />
+        <Route path="/inventario/editar/:id" element={<NewEquipment />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>

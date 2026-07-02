@@ -1,14 +1,14 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Plus, ClipboardList, Database, Settings, AlertCircle, Trash2 } from 'lucide-react';
+import { Plus, ClipboardList, Database, Settings, AlertCircle, Trash2, Package } from 'lucide-react';
 import Card from '../components/Card';
 import StatsCard from '../components/StatsCard';
 import Button from '../components/Button';
 import ConfirmDialog from '../components/ConfirmDialog';
 import { useUserStore } from '../stores/user.store';
 import { useEvaluationStore } from '../stores/evaluation.store';
-import { getAllEvaluations, getAllBackups, getConfig, getDraft, deleteEvaluationCascade } from '../services/storage.service';
+import { getAllEvaluations, getAllBackups, getConfig, getDraft, deleteEvaluationCascade, countEquipos } from '../services/storage.service';
 import { getCityName, getUnitById, getRoomById } from '../services/catalog.service';
 import { formatDate, formatTime, formatDateLong } from '../services/format';
 import { appConfig } from '../catalogs/appConfig';
@@ -21,7 +21,7 @@ export default function Dashboard() {
   const loadUser = useUserStore((s) => s.load);
   const startEval = useEvaluationStore((s) => s.start);
   const loadInto = useEvaluationStore((s) => s.loadInto);
-  const [stats, setStats] = useState({ realizadas: 0, respaldos: 0, pendientes: 0, ultima: null });
+  const [stats, setStats] = useState({ realizadas: 0, respaldos: 0, pendientes: 0, ultima: null, equipos: 0 });
   const [recent, setRecent] = useState([]);
   const [draft, setDraft] = useState(null);
   const [confirmDraft, setConfirmDraft] = useState(false);
@@ -31,11 +31,13 @@ export default function Dashboard() {
     const evals = await getAllEvaluations();
     const finalized = evals.filter((e) => e.estado !== 'borrador');
     const backups = await getAllBackups();
+    const count = await countEquipos();
     setStats({
       realizadas: finalized.length,
       respaldos: backups.length,
       pendientes: finalized.filter((e) => e.estado === ESTADO.PENDIENTE).length,
       ultima: await getConfig('ultimoRespaldo'),
+      equipos: count,
     });
     setRecent(finalized.slice(0, 5));
     setDraft(await getDraft());
@@ -116,14 +118,17 @@ export default function Dashboard() {
       {/* Resumen */}
       <div className="px-6 grid grid-cols-2 gap-3 mb-4">
         <StatsCard label="Evaluaciones realizadas" value={stats.realizadas} testId="stat-realizadas" />
+        <StatsCard label="Equipos en inventario" value={stats.equipos} testId="stat-equipos" />
         <StatsCard label="Respaldos generados" value={stats.respaldos} testId="stat-respaldos" />
         <StatsCard label="Pendientes de respaldar" value={stats.pendientes} accent testId="stat-pendientes" />
-        <StatsCard label="Última evaluación" value={recent[0] ? recent[0].fecha : '—'} testId="stat-ultima" />
       </div>
 
       {/* Acciones rápidas */}
       <div className="px-6 flex flex-col gap-3 mb-6">
-        <Button onClick={newEvaluation} icon={Plus} testId="dash-nueva-btn">Nueva Evaluación</Button>
+        <div className="grid grid-cols-2 gap-3">
+          <Button onClick={newEvaluation} icon={Plus} testId="dash-nueva-btn">Nueva Evaluación</Button>
+          <Button onClick={() => navigate('/inventario')} icon={Package} variant="secondary" testId="dash-inventario-btn">Inventario</Button>
+        </div>
         <div className="grid grid-cols-3 gap-3">
           <Button variant="secondary" icon={ClipboardList} fullWidth onClick={() => navigate('/historial')} testId="dash-historial-btn">Historial</Button>
           <Button variant="secondary" icon={Database} fullWidth onClick={() => navigate('/respaldos')} testId="dash-respaldos-btn">Respaldos</Button>

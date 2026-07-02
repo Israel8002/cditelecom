@@ -98,6 +98,33 @@ export async function countBackups() {
   return dbCount('respaldos');
 }
 
+// ---------------- EQUIPOS ----------------
+export async function saveEquipo(equipo) {
+  const now = new Date().toISOString();
+  const data = {
+    ...equipo,
+    fechaModificacion: now,
+    fechaRegistro: equipo.fechaRegistro || now,
+  };
+  await dbPut('equipos', data);
+  return data;
+}
+export async function getEquipo(id) {
+  return dbGet('equipos', id);
+}
+export async function getAllEquipos() {
+  return dbGetAll('equipos');
+}
+export async function getEquiposByRoom(roomId) {
+  return dbGetAllByIndex('equipos', 'roomId', roomId);
+}
+export async function deleteEquipo(id) {
+  await dbDelete('equipos', id);
+}
+export async function countEquipos() {
+  return dbCount('equipos');
+}
+
 // ---------------- CONFIGURACIÓN ----------------
 export async function setConfig(key, value) {
   await dbPut('configuracion', { key, value });

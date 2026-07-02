@@ -2,7 +2,7 @@ import { openDB } from 'idb';
 
 // Base de datos local. Toda la información crítica vive aquí (no LocalStorage).
 const DB_NAME = 'telecom-imss';
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 
 let dbPromise = null;
 
@@ -32,6 +32,11 @@ export function getDB() {
         }
         if (!db.objectStoreNames.contains('configuracion')) {
           db.createObjectStore('configuracion', { keyPath: 'key' });
+        }
+        if (!db.objectStoreNames.contains('equipos')) {
+          const s = db.createObjectStore('equipos', { keyPath: 'id' });
+          s.createIndex('unitId', 'unitId');
+          s.createIndex('roomId', 'roomId');
         }
       },
     });

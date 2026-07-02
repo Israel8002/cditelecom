@@ -10,7 +10,7 @@ import Card from '../components/Card';
 import Button from '../components/Button';
 import EmptyState from '../components/EmptyState';
 import BottomNavigation from '../components/BottomNavigation';
-import { getAllEvaluations, getAllBackups } from '../services/storage.service';
+import { getAllEvaluations, getAllBackups, getAllEquipos } from '../services/storage.service';
 import { getUnitById, getRoomById } from '../services/catalog.service';
 import { generateBackup, downloadBlob, shareFile } from '../services/backup.service';
 import { getLogs, logEvent, LOG } from '../services/log.service';
@@ -47,7 +47,7 @@ export default function Backups() {
       .map((y) => ({ value: y, label: String(y) }));
   }, [evals]);
 
-  const handleExportExcel = () => {
+  const handleExportExcel = async () => {
     let filtered = [...evals];
     
     if (filterType === 'year') {
@@ -78,7 +78,8 @@ export default function Backups() {
     }
 
     try {
-      exportEvaluationsToExcel(filtered, user, `evaluaciones_respaldo.xlsx`);
+      const equipos = await getAllEquipos();
+      exportEvaluationsToExcel(filtered, equipos, user, `evaluaciones_respaldo.xlsx`);
       toast.success('Excel exportado correctamente.');
       logEvent(LOG.DESCARGA, 'evaluaciones_respaldo.xlsx');
     } catch (err) {
