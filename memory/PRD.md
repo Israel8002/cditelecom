@@ -4,7 +4,7 @@
 PWA profesional 100% offline para Ingenieros de Telecom del IMSS (Coord. Delegacional de Informática, OOAD Baja California). Sustituye el proceso actual en AppSheet. Todo local en IndexedDB, sin backend, sin auth, sin APIs externas. PDF y JSON generados localmente; el usuario decide respaldar manualmente.
 
 ## Stack (decisión)
-El PRD pedía Next.js 15 + TS. Por estabilidad en la plataforma Emergent (frontend servido en :3000 vía CRACO), se implementó en **React 19 + CRACO (JavaScript)** manteniendo la arquitectura dirigida por catálogos exigida por el Anexo A. Sin backend/Mongo (FastAPI queda sin uso). Librerías: idb, zustand, zod, react-hook-form, framer-motion, pdf-lib, lucide-react, tailwind, sonner.
+El PRD pedía Next.js 15 + TS. Por estabilidad en el entorno de desarrollo (frontend servido en :3000 vía CRACO), se implementó en **React 19 + CRACO (JavaScript)** manteniendo la arquitectura dirigida por catálogos exigida por el Anexo A. Sin backend/Mongo (FastAPI queda sin uso). Librerías: idb, zustand, zod, react-hook-form, framer-motion, pdf-lib, lucide-react, tailwind, sonner.
 
 ## Arquitectura (Configuration Driven)
 - `/src/catalogs`: cities, units (74), rooms (177), sections, questions (41), pdf-layout, json-schema, constants, appConfig. Catálogos generados desde CATALOGO.txt del usuario (5 ciudades BC).
