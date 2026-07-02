@@ -4,7 +4,7 @@ import { toast } from 'sonner';
 import { Database, Download, Share2, FileText, Image as ImageIcon } from 'lucide-react';
 import Select from '../components/Select';
 import Input from '../components/Input';
-import { exportEvaluationsToExcel } from '../services/excel.service';
+import { exportEvaluationsToExcel, exportEquipmentToExcel } from '../services/excel.service';
 import PageHeader from '../components/PageHeader';
 import Card from '../components/Card';
 import Button from '../components/Button';
@@ -85,6 +85,22 @@ export default function Backups() {
     } catch (err) {
       toast.error('Error al exportar a Excel.');
       logEvent(LOG.ERROR, `Excel: ${err.message}`);
+    }
+  };
+
+  const handleExportInventory = async () => {
+    try {
+      const equipos = await getAllEquipos();
+      if (equipos.length === 0) {
+        toast.error('No hay equipos registrados en el inventario local.');
+        return;
+      }
+      exportEquipmentToExcel(equipos, 'inventario_total_equipos.xlsx');
+      toast.success('Inventario exportado correctamente.');
+      logEvent(LOG.DESCARGA, 'inventario_total_equipos.xlsx');
+    } catch (err) {
+      toast.error('Error al exportar el inventario.');
+      logEvent(LOG.ERROR, `Excel Inventario: ${err.message}`);
     }
   };
 
@@ -244,6 +260,16 @@ export default function Backups() {
             </div>
           </Card>
         )}
+
+        <Card className="mb-6" padding="p-5">
+          <h2 className="text-lg font-semibold mb-2" style={{ fontWeight: 600 }}>Exportar Inventario a Excel</h2>
+          <p className="text-sm text-[hsl(var(--muted-foreground))] mb-4">
+            Genera un archivo Excel (.xlsx) con todos los dispositivos de telecomunicaciones registrados en el inventario local.
+          </p>
+          <Button onClick={handleExportInventory} icon={Download} testId="export-inventory-excel-btn">
+            Exportar Inventario a Excel
+          </Button>
+        </Card>
 
         {evals.length === 0 ? (
           <EmptyState icon={Database} title="Sin evaluaciones" description="Realiza una evaluación para generar respaldos." testId="backups-empty" />

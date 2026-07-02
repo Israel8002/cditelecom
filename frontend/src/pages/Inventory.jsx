@@ -1,6 +1,6 @@
 import { useEffect, useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Package, Plus, Trash2, Edit, Filter, ListFilter } from 'lucide-react';
+import { Package, Plus, Trash2, Edit, Filter, ListFilter, Download } from 'lucide-react';
 import { toast } from 'sonner';
 import PageHeader from '../components/PageHeader';
 import SearchBox from '../components/SearchBox';
@@ -12,6 +12,7 @@ import BottomNavigation from '../components/BottomNavigation';
 import Select from '../components/Select';
 import { useEquipmentStore } from '../stores/equipment.store';
 import { getCities, getUnitsByCity, getRoomsByUnit, getUnitById, getRoomById } from '../services/catalog.service';
+import { exportEquipmentToExcel } from '../services/excel.service';
 
 export default function Inventory() {
   const navigate = useNavigate();
@@ -116,6 +117,19 @@ export default function Inventory() {
     }
   };
 
+  const handleExport = () => {
+    if (filtered.length === 0) {
+      toast.error('No hay equipos para exportar.');
+      return;
+    }
+    try {
+      exportEquipmentToExcel(filtered, 'inventario_filtrado.xlsx');
+      toast.success('Excel de inventario exportado correctamente.');
+    } catch (err) {
+      toast.error('Error al exportar a Excel.');
+    }
+  };
+
   const getStatusStyle = (status) => {
     switch (status) {
       case 'Operativo':
@@ -136,14 +150,25 @@ export default function Inventory() {
         subtitle={`${filtered.length} registrados`}
         onBack={() => navigate('/dashboard')}
         right={
-          <Button
-            size="sm"
-            onClick={() => navigate('/inventario/nuevo')}
-            icon={Plus}
-            testId="inv-add-btn"
-          >
-            Agregar
-          </Button>
+          <div className="flex gap-2">
+            <Button
+              size="sm"
+              variant="secondary"
+              onClick={handleExport}
+              icon={Download}
+              testId="inv-export-btn"
+            >
+              Excel
+            </Button>
+            <Button
+              size="sm"
+              onClick={() => navigate('/inventario/nuevo')}
+              icon={Plus}
+              testId="inv-add-btn"
+            >
+              Agregar
+            </Button>
+          </div>
         }
       />
 
