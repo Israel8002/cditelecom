@@ -8,12 +8,13 @@ import Button from '../components/Button';
 import ConfirmDialog from '../components/ConfirmDialog';
 import { useUserStore } from '../stores/user.store';
 import { useEvaluationStore } from '../stores/evaluation.store';
-import { getAllEvaluations, getAllBackups, getConfig, getDraft, deleteEvaluationCascade, countEquipos } from '../services/storage.service';
+import { getAllEvaluations, getAllBackups, getConfig, setConfig, getDraft, deleteEvaluationCascade, countEquipos } from '../services/storage.service';
 import { getCityName, getUnitById, getRoomById } from '../services/catalog.service';
 import { formatDate, formatTime, formatDateLong } from '../services/format';
 import { appConfig } from '../catalogs/appConfig';
 import { ESTADO } from '../catalogs/constants';
 import { logEvent, LOG } from '../services/log.service';
+import { toast } from 'sonner';
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -26,6 +27,39 @@ export default function Dashboard() {
   const [draft, setDraft] = useState(null);
   const [confirmDraft, setConfirmDraft] = useState(false);
   const [now] = useState(new Date());
+
+  // Annual cleanup states
+  const [showCleanupPrompt, setShowCleanupPrompt] = useState(false);
+  const [showCleanupConfirm, setShowCleanupConfirm] = useState(false);
+  const [cleanupYear, setCleanupYear] = useState(null);
+
+  const checkAnnualCleanup = async (evalsList) => {
+    const currentYear = new Date().getFullYear();
+    const lastChecked = await getConfig('ultimoAnioVerificado');
+    
+    if (lastChecked === undefined || lastChecked === null) {
+      // First time initialization, just record current year without prompting
+      await setConfig('ultimoAnioVerificado', currentYear);
+      return;
+    }
+    
+    if (currentYear > Number(lastChecked)) {
+      // Find evaluations from previous years
+      const pastEvals = evalsList.filter((e) => {
+        if (!e.fecha || !e.fecha.includes('/')) return false;
+        const year = Number(e.fecha.split('/')[2]);
+        return year < currentYear;
+      });
+      
+      if (pastEvals.length > 0) {
+        setCleanupYear(currentYear - 1);
+        setShowCleanupPrompt(true);
+      } else {
+        // No evaluations from past years, just update year
+        await setConfig('ultimoAnioVerificado', currentYear);
+      }
+    }
+  };
 
   const refresh = async () => {
     const evals = await getAllEvaluations();
@@ -41,6 +75,9 @@ export default function Dashboard() {
     });
     setRecent(finalized.slice(0, 5));
     setDraft(await getDraft());
+    
+    // Check for annual cleanup
+    await checkAnnualCleanup(evals);
   };
 
   useEffect(() => {
@@ -67,6 +104,43 @@ export default function Dashboard() {
     setConfirmDraft(false);
     setDraft(null);
     refresh();
+  };
+
+  const handleKeepEvaluations = async () => {
+    const currentYear = new Date().getFullYear();
+    await setConfig('ultimoAnioVerificado', currentYear);
+    setShowCleanupPrompt(false);
+    toast.info('Se conservaron las evaluaciones del año anterior.');
+  };
+
+  const handleStartCleanup = () => {
+    setShowCleanupPrompt(false);
+    setShowCleanupConfirm(true);
+  };
+
+  const handleConfirmCleanup = async () => {
+    setShowCleanupConfirm(false);
+    const currentYear = new Date().getFullYear();
+    const evals = await getAllEvaluations();
+    const pastEvals = evals.filter((e) => {
+      if (!e.fecha || !e.fecha.includes('/')) return false;
+      const year = Number(e.fecha.split('/')[2]);
+      return year < currentYear;
+    });
+
+    toast.info(`Eliminando ${pastEvals.length} evaluaciones del año anterior...`);
+
+    try {
+      for (const e of pastEvals) {
+        await deleteEvaluationCascade(e.id);
+        await logEvent(LOG.ELIMINAR, `Borrado anual: ${e.id}`);
+      }
+      await setConfig('ultimoAnioVerificado', currentYear);
+      toast.success('Borrado anual de evaluaciones completado.');
+      refresh();
+    } catch (err) {
+      toast.error('Error al realizar el borrado anual.');
+    }
   };
 
   const unitName = (u) => getUnitById(u)?.nombre || u;
@@ -168,6 +242,24 @@ export default function Dashboard() {
         description="Se eliminará el borrador y sus fotografías. Esta acción no puede deshacerse."
         onConfirm={deleteDraft}
         onCancel={() => setConfirmDraft(false)}
+      />
+
+      <ConfirmDialog
+        open={showCleanupPrompt}
+        title={`¿Limpiar evaluaciones de ${cleanupYear}?`}
+        description={`Se ha detectado el inicio de un nuevo año. ¿Deseas eliminar las evaluaciones del año anterior (${cleanupYear}) para liberar espacio local? El inventario de equipos y las configuraciones no se verán afectados.`}
+        onConfirm={handleStartCleanup}
+        onCancel={handleKeepEvaluations}
+        confirmText="Sí, limpiar"
+      />
+
+      <ConfirmDialog
+        open={showCleanupConfirm}
+        title="¿Estás completamente seguro?"
+        description={`Esta acción eliminará de forma permanente todas las evaluaciones del año anterior (${cleanupYear}) y sus fotografías locales del dispositivo. Esta acción NO se puede deshacer.`}
+        onConfirm={handleConfirmCleanup}
+        onCancel={() => setShowCleanupConfirm(false)}
+        confirmText="Sí, eliminar de todos modos"
       />
     </div>
   );
