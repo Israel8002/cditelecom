@@ -23,6 +23,7 @@ El sistema elimina el uso de papel y la dependencia de plataformas de terceros, 
   * **Reporte Fotográfico:** Cuadrícula de fotos 2x2 optimizada para impresión con protección contra fallos en renderizado.
   * **Oficio de Evaluación:** Oficio formal dirigido a la dirección médica con justificación de texto al vuelo e integración directa de recomendaciones.
 * 📊 **Exportación a Excel (`xlsx`):** Módulo de filtrado avanzado (por año o rango de fechas) para descargar datos acumulados consolidados.
+* 📦 **Inventario de Equipamiento en Sitio (v1.1.0):** Gestión offline de switches, ruteadores, UPS y más, mapeados a catálogos dinámicos (148 modelos). Permite registrar marcas/modelos personalizados y exportar hojas Excel dedicadas.
 * 📱 **Instalable (PWA):** Interfaz inmersiva a pantalla completa y acceso directo desde el escritorio en iOS, Android y Windows/macOS.
 
 ---

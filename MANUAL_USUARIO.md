@@ -12,10 +12,11 @@ Este documento proporciona una guía detallada para el uso del **Sistema de Eval
 3. [Registro Inicial de Evaluador](#3-registro-inicial-de-evaluador)
 4. [El Panel de Control (Dashboard)](#4-el-panel-de-control-dashboard)
 5. [Realización de una Nueva Evaluación](#5-realización-de-una-nueva-evaluación)
-6. [Historial y Detalle de Evaluaciones](#6-historial-y-detalle-de-evaluaciones)
-7. [Gestión de Respaldos de Información](#7-gestión-de-respaldos-de-información)
-8. [Configuración del Sistema](#8-configuración-del-sistema)
-9. [Solución de Problemas y Preguntas Frecuentes](#9-solución-de-problemas-y-preguntas-frecuentes)
+6. [Módulo de Inventario de Equipamiento](#6-módulo-de-inventario-de-equipamiento)
+7. [Historial y Detalle de Evaluaciones](#7-historial-y-detalle-de-evaluaciones)
+8. [Gestión de Respaldos de Información](#8-gestión-de-respaldos-de-información)
+9. [Configuración del Sistema](#9-configuración-del-sistema)
+10. [Solución de Problemas y Preguntas Frecuentes](#10-solución-de-problemas-y-preguntas-frecuentes)
 
 ---
 
@@ -133,7 +134,30 @@ Antes de guardar, verás una pantalla con la puntuación de cumplimiento obtenid
 
 ---
 
-## 6. Historial y Detalle de Evaluaciones
+## 6. Módulo de Inventario de Equipamiento
+
+El sistema cuenta con un módulo offline completo para el levantamiento de activos físicos en los cuartos de comunicaciones (MDF / IDF), accesible desde el botón **"Inventario"** del Dashboard principal.
+
+### Vista del Inventario:
+* **Búsqueda Dinámica**: Filtra en tiempo real por número de serie, marca, modelo, dirección MAC o IP.
+* **Filtros Avanzados**: Despliega filtros colapsables por Ciudad, Unidad Médica, Cuarto específico (MDF/IDF) y Tipo de dispositivo para depurar listas extensas.
+* **Exportación Rápida a Excel**: Un botón **"Excel"** en la cabecera te permite descargar inmediatamente los activos visibles en pantalla (`inventario_filtrado.xlsx`), respetando la búsqueda y los filtros que tengas aplicados.
+
+### Captura de un Nuevo Activo:
+1. **Ubicación**: El sistema heredará la Ciudad y Unidad de tu perfil de evaluador activo de forma automática, aunque puedes modificarlas de ser necesario. Selecciona el Cuarto (MDF/IDF) correspondiente.
+2. **Especificación del Dispositivo**:
+   - **Tipo de Dispositivo**: Selecciona la categoría (`CORE`, `DVR`, `MODEM`, `NTU`, `PBX`, `ROUTER`, `SWITCH`, `UPS`).
+   - **Marca y Modelo**: El sistema cargará el catálogo de marcas y modelos oficiales asociados al tipo seleccionado.
+   - **Dispositivo Personalizado ("Otro")**: Si el modelo físico no figura en el catálogo, selecciona la opción *"Otro (Agregar Personalizado)"* e ingresa la marca y modelo correspondientes. El sistema los registrará localmente y recordará para futuras selecciones sin obligarte a escribirlos de nuevo.
+3. **Número de Serie**: Captura de forma manual el número de serie físico impreso en el chasis del equipo.
+4. **Estado Operativo**: Selecciona el estado en el que se encuentra el activo (`Operativo`, `Requiere Mantenimiento` o `Dañado/Fuera de Servicio`).
+5. **Detalles de Conectividad (Opcional)**: Habilita el registro de puertos totales, puertos activos ocupados, dirección MAC física, dirección IP de administración del equipo y observaciones adicionales de interés técnico.
+
+Presiona **"Guardar Equipo"** para persistir el activo. El sistema registrará el cambio de inmediato en la base de datos local del navegador.
+
+---
+
+## 7. Historial y Detalle de Evaluaciones
 
 En el módulo **Historial**, verás una tabla con todas las auditorías realizadas en el dispositivo. 
 
@@ -154,7 +178,7 @@ En el módulo **Historial**, verás una tabla con todas las auditorías realizad
 
 ---
 
-## 7. Gestión de Respaldos de Información
+## 8. Gestión de Respaldos de Información
 
 Dado que toda la información se guarda localmente en el dispositivo, es vital realizar respaldos periódicos.
 
@@ -182,7 +206,7 @@ En el listado inferior, cada tarjeta de evaluación te permite generar y descarg
 
 ---
 
-## 8. Configuración del Sistema
+## 9. Configuración del Sistema
 
 En la pantalla de **Configuración** podrás realizar las siguientes tareas:
 * **Editar Datos del Evaluador:** Modifica tu nombre, ciudad o unidad delegacional de adscripción en caso de reubicación (el campo matrícula se mantiene bloqueado para evitar alteraciones accidentales).
@@ -192,7 +216,7 @@ En la pantalla de **Configuración** podrás realizar las siguientes tareas:
 
 ---
 
-## 9. Solución de Problemas y Preguntas Frecuentes
+## 10. Solución de Problemas y Preguntas Frecuentes
 
 ### 1. ¿Por qué no me aparece la opción de instalar la aplicación?
 * Asegúrate de estar ingresando desde un navegador compatible (Chrome en Android, Safari en iOS, Edge/Chrome en Windows).

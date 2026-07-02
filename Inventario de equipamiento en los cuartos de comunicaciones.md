@@ -1,5 +1,9 @@
 # Propuesta de Diseño: Inventario de Equipamiento en Cuartos de Comunicaciones
 
+> [!NOTE]
+> **ESTADO: COMPLETAMENTE IMPLEMENTADO (Julio 2026)**
+> Esta funcionalidad ha sido integrada y liberada en la versión **1.1.0** de la aplicación móvil local, incluyendo soporte offline total, catalogación inteligente de 148 modelos, entradas personalizadas de marca/modelo y exportación cruzada de hojas de cálculo de Excel.
+
 Este documento presenta la propuesta técnica y de interfaz para incorporar un módulo de **Inventario de Equipamiento** al actual *Sistema de Evaluación de Cuartos de Telecomunicaciones*. El objetivo es permitir el levantamiento y control de activos físicos (switches, ruteadores, UPS, etc.) en sitio de forma **100% offline**, vinculando los equipos directamente a las unidades y cuartos de comunicaciones (MDF/IDF) existentes.
 
 ---
