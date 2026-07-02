@@ -94,7 +94,9 @@ export default function EvaluationDetail() {
 
     const atencionCargo = oficioForm.tipoAtencion === 'Otro'
       ? oficioForm.customCargo
-      : (oficioForm.tipoAtencion + ' ' + oficioForm.condicion).trim();
+      : oficioForm.tipoAtencion;
+
+    localStorage.setItem('oficio_atencionCargo', atencionCargo);
 
     setGenOficio(true);
     setShowOficioModal(false);
@@ -264,15 +266,10 @@ export default function EvaluationDetail() {
                 <input type="text" value={oficioForm.atencionNombre} onChange={e => setOficioForm({...oficioForm, atencionNombre: e.target.value})} className="w-full px-3 py-2 rounded-lg bg-[hsl(var(--muted))] border border-[hsl(var(--border))] text-sm focus:outline-none focus:ring-1 focus:ring-[hsl(var(--primary))]" />
               </div>
 
-              {oficioForm.tipoAtencion !== 'Otro' ? (
+              {oficioForm.tipoAtencion === 'Otro' && (
                 <div>
-                  <label className="text-xs font-semibold block mb-1">Especificar Cargo (ej. Encargado, Responsable, Titular)</label>
-                  <input type="text" value={oficioForm.condicion} onChange={e => setOficioForm({...oficioForm, condicion: e.target.value})} className="w-full px-3 py-2 rounded-lg bg-[hsl(var(--muted))] border border-[hsl(var(--border))] text-sm focus:outline-none focus:ring-1 focus:ring-[hsl(var(--primary))]" />
-                </div>
-              ) : (
-                <div>
-                  <label className="text-xs font-semibold block mb-1">Cargo a Especificar</label>
-                  <input type="text" value={oficioForm.customCargo} onChange={e => setOficioForm({...oficioForm, customCargo: e.target.value})} className="w-full px-3 py-2 rounded-lg bg-[hsl(var(--muted))] border border-[hsl(var(--border))] text-sm focus:outline-none focus:ring-1 focus:ring-[hsl(var(--primary))]" />
+                  <label className="text-xs font-semibold block mb-1">Especificar Cargo</label>
+                  <input type="text" value={oficioForm.customCargo} onChange={e => setOficioForm({...oficioForm, customCargo: e.target.value})} className="w-full px-3 py-2 rounded-lg bg-[hsl(var(--muted))] border border-[hsl(var(--border))] text-sm focus:outline-none focus:ring-1 focus:ring-[hsl(var(--primary))]" placeholder="Ej. Encargado, Responsable, Titular..." />
                 </div>
               )}
             </div>
