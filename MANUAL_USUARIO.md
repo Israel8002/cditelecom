@@ -140,10 +140,15 @@ En el módulo **Historial**, verás una tabla con todas las auditorías realizad
 ### Opciones Disponibles en el Detalle de cada Evaluación:
 1. **Detalle (Lectura):** Acceso a la ficha completa de la auditoría. Una vez finalizada, la evaluación es **inmutable** (no se puede editar en sus respuestas para garantizar la integridad de la auditoría).
 2. **Generar/Descargar PDF (Reporte de Evaluación):** Crea y descarga un archivo PDF institucional de 2 columnas, cumpliendo estrictamente los requisitos de presentación del IMSS para el año 2025 (logotipos, firmas, desglose de calificaciones y observaciones).
-3. **Generar/Descargar Reporte Fotográfico:** Genera y descarga un PDF independiente dedicado de forma exclusiva a las fotografías registradas en la evaluación. 
-   * > [!NOTE]
-     > **Formato de 4 fotos por hoja:** Este PDF está configurado en una cuadrícula de 2x2 para acomodar exactamente **4 fotografías por hoja** junto con el membrete oficial de la unidad, evaluador, cuarto, fecha y el nombre de cada archivo impreso debajo como etiqueta descriptiva.
-4. **Compartir Archivos:** Permite enviar los PDFs (Evaluación y Fotos) a través del menú nativo de tu celular a aplicaciones de mensajería (WhatsApp, Telegram) o correo electrónico.
+3. **Generar/Descargar Reporte Fotográfico:** Genera y descarga un PDF independiente dedicado de forma exclusiva a las fotografías registradas en la evaluación (4 fotos por hoja en una cuadrícula de 2x2).
+4. **Generar/Descargar Oficio de Evaluación:** Abre un formulario flotante interactivo para ingresar o actualizar los datos del destinatario:
+   * **Nombre y Puesto del Director** (por ejemplo: *C. Dr. Francisco Javier García* / *Director del HGR 20*)
+   * **Tipo de Atención**: Permite elegir entre *Administrador*, *Ingeniero de Conservación* u *Otro*.
+   * **Nombre (Atención)**: El nombre del destinatario técnico a quien se atiende.
+   * **Especificar Cargo**: Permite detallar si es *Encargado*, *Responsable*, *Titular*, etc. (o ingresar un cargo libre personalizado en caso de elegir la opción *Otro*).
+   * > [!TIP]
+     > El sistema recuerda y almacena localmente estos campos para que no tengas que escribirlos de nuevo en futuras auditorías. Genera un reporte formal con texto **justificado** dirigido al Director que detalla de forma ordenada la lista de requerimientos (recomendaciones surgidas de la auditoría) de esa Unidad Médica específica, el espacio para firma y el área para sello físico de la Unidad.
+5. **Compartir Archivos:** Permite enviar los documentos generados (Evaluación, Reporte Fotográfico y Oficio) a través de WhatsApp, correo electrónico, etc.
    * > [!IMPORTANT]
      > **Botón JSON exclusivo de Respaldos:** Para simplificar la pantalla del asistente y detalle, el botón de exportación individual de datos en formato JSON se movió de forma exclusiva a la sección de **Respaldos**.
 
@@ -164,11 +169,12 @@ En la parte superior de la sección de Respaldos dispones del panel **Exportar E
    > El Excel resultante contiene un registro por fila de todas las evaluaciones filtradas, detallando metadatos completos, evaluador, unidad, cuarto, puntaje final, observaciones, recomendaciones y las respuestas individuales a cada una de las 41 preguntas de catálogo (excluyendo fotos), ideal para análisis masivos o reportes estatales.
 
 ### B. Descargar Respaldos Individuales por Evaluación:
-En el listado inferior, cada tarjeta de evaluación te permite generar y descargar tres formatos independientes en base de datos:
+En el listado inferior, cada tarjeta de evaluación te permite generar y descargar cuatro formatos independientes:
 * **PDF:** El reporte institucional del formato de evaluación.
-* **Fotos (PDF):** El reporte fotográfico de 4 imágenes por hoja (el sistema lo generará en caliente al instante si no se había creado antes).
+* **Fotos (PDF):** El reporte fotográfico de 4 imágenes por hoja.
+* **Oficio (PDF):** El oficio oficial de evaluación dirigido al Director con la lista de requerimientos (se autogenera con datos por defecto si no lo habías creado).
 * **JSON:** El archivo de datos estructurados de la auditoría.
-* Cuenta además con botones de **Compartir** para cada uno de estos tres formatos.
+* Cuenta además con botones de **Compartir** para cada uno de estos cuatro formatos.
 
 ### C. Copias de Seguridad del Sistema Completo:
 * **Exportar Respaldo Completo:** Presiona **"Generar Respaldo"** para empaquetar todas las evaluaciones y fotos en un solo archivo JSON global que sirve de salvaguarda.

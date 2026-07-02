@@ -92,6 +92,10 @@ export default function Settings() {
           <p className="text-sm text-[hsl(var(--muted-foreground))] mt-3">{appConfig.author}</p>
           <p className="text-sm text-[hsl(var(--muted-foreground))]">{appConfig.institution}</p>
           <p className="text-sm text-[hsl(var(--muted-foreground))]">{appConfig.department}</p>
+          <div className="border-t border-[hsl(var(--border))] mt-4 pt-3 flex flex-col gap-1">
+            <p className="text-xs text-[hsl(var(--muted-foreground))]">Copyright &copy; {new Date().getFullYear()} LSC Israel Díaz Serrano</p>
+            <p className="text-[11px] text-[hsl(var(--muted-foreground))] leading-normal mt-1">Este programa es software libre: Tu puedes distribuir bajo los terminos de la licencia de GNU General Public License v3.0.</p>
+          </div>
         </Card>
       </div>
       <BottomNavigation />

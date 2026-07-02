@@ -125,6 +125,44 @@ export default function Backups() {
     }
   };
 
+  const handleDlOficio = async (e, b) => {
+    if (b.pdfOficio) {
+      downloadBlob(b.pdfOficio, b.pdfOficioNombre);
+      logEvent(LOG.DESCARGA, b.pdfOficioNombre);
+    } else {
+      setBusy(e.id);
+      toast.info("Generando oficio de evaluación...");
+      try {
+        const updatedBk = await generateBackup(e, user);
+        await load();
+        downloadBlob(updatedBk.pdfOficio, updatedBk.pdfOficioNombre);
+        logEvent(LOG.DESCARGA, updatedBk.pdfOficioNombre);
+      } catch (err) {
+        toast.error("Error al generar oficio de evaluación.");
+      } finally {
+        setBusy(null);
+      }
+    }
+  };
+
+  const handleShareOficio = async (e, b) => {
+    if (b.pdfOficio) {
+      shareFile(b.pdfOficio, b.pdfOficioNombre);
+    } else {
+      setBusy(e.id);
+      toast.info("Generando oficio de evaluación...");
+      try {
+        const updatedBk = await generateBackup(e, user);
+        await load();
+        shareFile(updatedBk.pdfOficio, updatedBk.pdfOficioNombre);
+      } catch (err) {
+        toast.error("Error al generar oficio de evaluación.");
+      } finally {
+        setBusy(null);
+      }
+    }
+  };
+
   const load = async () => {
     const all = (await getAllEvaluations()).filter((e) => e.estado !== 'borrador');
     setEvals(all);
@@ -221,15 +259,17 @@ export default function Backups() {
                     <Button icon={FileText} loading={busy === e.id} onClick={() => doGenerate(e)} testId={`backup-gen-${e.id}`}>Generar Respaldo</Button>
                   ) : (
                     <div className="flex flex-col gap-2">
-                      <div className="grid grid-cols-3 gap-2">
+                      <div className="grid grid-cols-4 gap-2">
                         <Button variant="secondary" icon={Download} onClick={() => { downloadBlob(b.pdf, b.pdfNombre); logEvent(LOG.DESCARGA, b.pdfNombre); }} testId={`backup-dl-pdf-${e.id}`}>PDF</Button>
                         <Button variant="secondary" icon={Download} onClick={() => handleDlFotos(e, b)} testId={`backup-dl-pdf-fotos-${e.id}`}>Fotos</Button>
+                        <Button variant="secondary" icon={Download} onClick={() => handleDlOficio(e, b)} testId={`backup-dl-pdf-oficio-${e.id}`}>Oficio</Button>
                         <Button variant="secondary" icon={Download} onClick={() => { downloadBlob(b.json, b.jsonNombre, 'application/json'); logEvent(LOG.DESCARGA, b.jsonNombre); }} testId={`backup-dl-json-${e.id}`}>JSON</Button>
                       </div>
-                      <div className="grid grid-cols-3 gap-2">
-                        <Button variant="outline" icon={Share2} onClick={() => shareFile(b.pdf, b.pdfNombre)} testId={`backup-share-pdf-${e.id}`}>Compartir PDF</Button>
-                        <Button variant="outline" icon={Share2} onClick={() => handleShareFotos(e, b)} testId={`backup-share-pdf-fotos-${e.id}`}>Compartir Fotos</Button>
-                        <Button variant="outline" icon={Share2} onClick={() => shareFile(b.json, b.jsonNombre, 'application/json')} testId={`backup-share-json-${e.id}`}>Compartir JSON</Button>
+                      <div className="grid grid-cols-4 gap-2 text-xs">
+                        <Button variant="outline" icon={Share2} onClick={() => shareFile(b.pdf, b.pdfNombre)} testId={`backup-share-pdf-${e.id}`}>Ev. Share</Button>
+                        <Button variant="outline" icon={Share2} onClick={() => handleShareFotos(e, b)} testId={`backup-share-pdf-fotos-${e.id}`}>Fotos Share</Button>
+                        <Button variant="outline" icon={Share2} onClick={() => handleShareOficio(e, b)} testId={`backup-share-pdf-oficio-${e.id}`}>Oficio Share</Button>
+                        <Button variant="outline" icon={Share2} onClick={() => shareFile(b.json, b.jsonNombre, 'application/json')} testId={`backup-share-json-${e.id}`}>JSON Share</Button>
                       </div>
                     </div>
                   )}

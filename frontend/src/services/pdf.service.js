@@ -31,6 +31,37 @@ function wrapText(text, font, size, maxWidth) {
   return lines;
 }
 
+function drawJustifiedText(page, text, x, y, size, font, maxWidth, color = BLACK) {
+  const lines = wrapText(text, font, size, maxWidth);
+  let cy = y;
+  lines.forEach((line, index) => {
+    const trimmedLine = line.trim();
+    const words = trimmedLine.split(/\s+/);
+    
+    if (index < lines.length - 1 && words.length > 1) {
+      // Calculate total width of words without space characters
+      let wordsWidth = 0;
+      words.forEach(w => {
+        wordsWidth += font.widthOfTextAtSize(safeText(w), size);
+      });
+      // Space width for each gap
+      const spaceWidth = (maxWidth - wordsWidth) / (words.length - 1);
+      
+      let cx = x;
+      words.forEach(w => {
+        const cleanWord = safeText(w);
+        page.drawText(cleanWord, { x: cx, y: cy, size, font, color });
+        cx += font.widthOfTextAtSize(cleanWord, size) + spaceWidth;
+      });
+    } else {
+      // Last line or single-word line: draw standard spaces
+      page.drawText(safeText(trimmedLine), { x, y: cy, size, font, color });
+    }
+    cy -= 13;
+  });
+  return cy;
+}
+
 // Devuelve las preguntas respondidas y visibles agrupadas por sección (sin observaciones).
 function answeredBySection(answers) {
   return getSections()
@@ -371,4 +402,177 @@ export async function generatePhotographicPDF(evaluation, user, photos) {
 export function bytesToBlobURL(bytes, type = 'application/pdf') {
   const blob = new Blob([bytes], { type });
   return URL.createObjectURL(blob);
+}
+
+export function pdfOficioFileName(evaluation) {
+  const unit = getUnitById(evaluation.unidad);
+  const room = getRoomById(evaluation.cuarto);
+  const u = sanitizeName(unit?.nombre || evaluation.unidad);
+  const r = sanitizeName(room?.nombre || evaluation.cuarto);
+  return `Oficio_Evaluacion_${evaluation.id}_${u}_${r}.pdf`;
+}
+
+// Genera el PDF del Oficio de Evaluación. Devuelve Uint8Array.
+export async function generateOficioPDF(evaluation, user, oficioData) {
+  const doc = await PDFDocument.create();
+  const [W, H] = pdfLayout.pageSize;
+  const font = await doc.embedFont(StandardFonts.Helvetica);
+  const bold = await doc.embedFont(StandardFonts.HelveticaBold);
+  const italic = await doc.embedFont(StandardFonts.HelveticaOblique);
+  const M = 50; // Margins
+
+  const unit = getUnitById(evaluation.unidad);
+  
+  let page = doc.addPage([W, H]);
+  let y = H - M;
+
+  const center = (txt, size, f = bold) => {
+    const s = safeText(txt);
+    const w = f.widthOfTextAtSize(s, size);
+    page.drawText(s, { x: (W - w) / 2, y, size, font: f, color: BLACK });
+  };
+
+  const formatDate = (dStr) => {
+    if (!dStr) return '';
+    const parts = dStr.split('-');
+    if (parts.length === 3) return `${parts[2]}/${parts[1]}/${parts[0]}`;
+    return dStr;
+  };
+
+  // Encabezado
+  center("OFICIO EVALUACION TELECOMUNICACIONES", 12, bold); y -= 15;
+  center("Control de Seguridad para Redes de Voz y Datos", 9, bold); y -= 25;
+  page.drawLine({ start: { x: M, y }, end: { x: W - M, y }, thickness: 0.8, color: BLACK });
+  y -= 18;
+
+  // Metadata Folio y Fecha
+  const folioStr = `OFICIO: ${evaluation.id}`;
+  const dateStr = `FECHA: ${formatDate(evaluation.fecha)} ${evaluation.hora}`;
+  page.drawText(safeText(folioStr), { x: M, y, size: 9, font: bold, color: BLACK });
+  const dateW = bold.widthOfTextAtSize(safeText(dateStr), 9);
+  page.drawText(safeText(dateStr), { x: W - M - dateW, y, size: 9, font: bold, color: BLACK });
+  y -= 25;
+
+  // Recipient block
+  const directorNombre = oficioData?.directorNombre || 'C. DIRECTOR DE LA UNIDAD';
+  const directorCargo = oficioData?.directorCargo || 'Director de la Unidad';
+  const atencionNombre = oficioData?.atencionNombre || 'ADMINISTRADOR DE LA UNIDAD';
+  const atencionCargo = oficioData?.atencionCargo || 'Administrador del Sitio';
+
+  page.drawText(safeText(directorNombre.toUpperCase()), { x: M, y, size: 9, font: bold, color: BLACK });
+  y -= 12;
+  page.drawText(safeText(directorCargo), { x: M, y, size: 9, font, color: BLACK });
+  y -= 20;
+
+  const attLbl = "Atención: ";
+  const attName = attLbl + atencionNombre;
+  const attNameWidth = bold.widthOfTextAtSize(attName, 9);
+  const attX = W - M - attNameWidth;
+  page.drawText(safeText(attName), { x: attX, y, size: 9, font: bold, color: BLACK });
+  y -= 12;
+  const cargoWidth = font.widthOfTextAtSize(atencionCargo, 9);
+  const cargoX = W - M - cargoWidth;
+  page.drawText(safeText(atencionCargo), { x: cargoX, y, size: 9, font, color: BLACK });
+  y -= 25;
+
+  page.drawText("Presente", { x: M, y, size: 9, font: bold, color: BLACK });
+  y -= 18;
+
+  // Paragraph 1
+  const p1 = "Con el propósito de dar cumplimiento al proceso de Administración de la Seguridad de la información y de los criterios y controles publicados en la Norma de Seguridad Informática (ASI ACT 00), recientemente el personal de la Coordinación de Informática evaluó el cumplimiento de Criterios de Seguridad, Conservación, Servicios Básicos, Cableado y Mantenimientos de Equipos TICs en todos los cuartos de comunicaciones, principal (MDF) Y secundarios (IDFs), instalados en Unidades de la Delegación.";
+  y = drawJustifiedText(page, p1, M, y, 9, font, W - 2 * M);
+  y -= 10;
+
+  // Paragraph 2
+  const p2 = "Como resultado de esta evaluación se determinaron los siguientes requerimientos, para los cuales pido su amable intervención. Afín de que sean reparados y/o adquiridos e instalados, según lo que corresponda:";
+  y = drawJustifiedText(page, p2, M, y, 9, font, W - 2 * M);
+  y -= 15;
+
+  // Unidad name
+  const unitText = "UNIDAD: " + (unit ? unit.nombre : evaluation.unidad);
+  page.drawText(safeText(unitText), { x: M, y, size: 9, font: bold, color: BLACK });
+  y -= 11;
+
+  // Recommendations list
+  const recs = evaluation.recomendaciones || [];
+  recs.forEach(rec => {
+    const recText = `• ${rec}`;
+    const recLines = wrapText(recText, font, 9, W - 2 * M - 20);
+    recLines.forEach(line => {
+      page.drawText(safeText(line), { x: M + 20, y, size: 9, font, color: BLACK });
+      y -= 13;
+    });
+    y -= 4;
+  });
+  if (recs.length > 0) y -= 10;
+
+  // Check if we need to add a page if y is too low
+  if (y < 180) {
+    page = doc.addPage([W, H]);
+    y = H - M;
+  }
+
+  // Paragraph 3
+  const p3 = "No omito mencionar, que los requerimientos detectados, están alineados con los criterios que utiliza la Unidad de Evaluación a Delegaciones (UEOD) durante las supervisiones que efectúa, por lo que su incumplimiento u omisión puede dar lugar a una observación por parte de esta autoridad o en su caso más extremo, comprometer el correcto funcionamiento de los servidores de aplicaciones y equipos de las redes de voz y datos.";
+  y = drawJustifiedText(page, p3, M, y, 9, font, W - 2 * M);
+  y -= 10;
+
+  const p4 = "Le agradezco de antemano su atención y quedo a sus órdenes para cualquier aclaración.";
+  y = drawJustifiedText(page, p4, M, y, 9, font, W - 2 * M);
+  y -= 30;
+
+  // Check if we need a new page for signatures
+  if (y < 140) {
+    page = doc.addPage([W, H]);
+    y = H - M;
+  }
+
+  const stampTopY = y;
+
+  // ATENTAMENTE block
+  page.drawText("ATENTAMENTE", { x: M, y, size: 9, font: bold, color: BLACK });
+  y -= 12;
+  page.drawText("“Instituto Mexicano del Seguro Social”", { x: M, y: y, size: 9, font: italic, color: BLACK });
+  y -= 45;
+  page.drawLine({ start: { x: M, y }, end: { x: M + 180, y }, thickness: 0.6, color: BLACK });
+  y -= 12;
+  page.drawText("Evaluador: " + (user?.nombre || ''), { x: M, y, size: 9, font: bold, color: BLACK });
+
+  // Sello block (Right side)
+  page.drawRectangle({
+    x: 370,
+    y: stampTopY - 70,
+    width: 140,
+    height: 75,
+    borderWidth: 0.8,
+    borderColor: GRAY,
+    borderDashArray: [3, 3]
+  });
+  const stampTxt = "SELLO DE LA UNIDAD";
+  const stW = font.widthOfTextAtSize(stampTxt, 8);
+  page.drawText(stampTxt, { x: 370 + (140 - stW) / 2, y: stampTopY - 37, size: 8, font, color: GRAY });
+
+  y = stampTopY - 85;
+
+  // Ccp block at the very bottom
+  if (y < 60) {
+    page = doc.addPage([W, H]);
+    y = H - M;
+  }
+  
+  y -= 15;
+  page.drawText("Ccp. Jefe de Oficina de Infraestructura Coordinación de Informática", { x: M, y, size: 7, font: italic, color: GRAY });
+  y -= 10;
+  page.drawText("Ccp. Telecomunicaciones Oficina de Infraestructura", { x: M, y, size: 7, font: italic, color: GRAY });
+  y -= 10;
+  page.drawText("Ccp. Expediente", { x: M, y, size: 7, font: italic, color: GRAY });
+
+  // Page numbering in footer of all pages
+  const pages = doc.getPages();
+  pages.forEach((p, idx) => {
+    const pagenum = `Página ${idx + 1} de ${pages.length}`;
+    p.drawText(pagenum, { x: W - M - font.widthOfTextAtSize(pagenum, 8), y: 35, size: 8, font, color: GRAY });
+  });
+
+  return doc.save();
 }

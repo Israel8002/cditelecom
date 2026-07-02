@@ -9,7 +9,7 @@ import ConfirmDialog from '../components/ConfirmDialog';
 import { getEvaluation, getPhotos, deleteEvaluationCascade, getBackupByEvaluation } from '../services/storage.service';
 import { getUnitById, getRoomById, getCityName, getAllQuestions, isQuestionVisible, getSectionName, computeScore } from '../services/catalog.service';
 import { useUserStore } from '../stores/user.store';
-import { generatePdf, generatePhotographicPdf, downloadBlob, shareFile } from '../services/backup.service';
+import { generatePdf, generatePhotographicPdf, generateOficioPdf, downloadBlob, shareFile } from '../services/backup.service';
 import { logEvent, LOG } from '../services/log.service';
 import { TXT, ESTADO } from '../catalogs/constants';
 
@@ -24,6 +24,16 @@ export default function EvaluationDetail() {
   const [confirm, setConfirm] = useState(false);
   const [genPdf, setGenPdf] = useState(false);
   const [genPdfFotos, setGenPdfFotos] = useState(false);
+  const [genOficio, setGenOficio] = useState(false);
+  const [showOficioModal, setShowOficioModal] = useState(false);
+  const [oficioForm, setOficioForm] = useState({
+    directorNombre: localStorage.getItem('oficio_directorNombre') || 'C. DIRECTOR DE LA UNIDAD',
+    directorCargo: localStorage.getItem('oficio_directorCargo') || 'Director de la Unidad',
+    tipoAtencion: localStorage.getItem('oficio_tipoAtencion') || 'Administrador',
+    atencionNombre: localStorage.getItem('oficio_atencionNombre') || 'ADMINISTRADOR DE LA UNIDAD',
+    condicion: localStorage.getItem('oficio_condicion') || 'Encargado',
+    customCargo: localStorage.getItem('oficio_customCargo') || 'Administrador del Sitio',
+  });
 
   const load = useCallback(async () => {
     const e = await getEvaluation(id);
@@ -72,6 +82,36 @@ export default function EvaluationDetail() {
       await logEvent(LOG.ERROR, `PDF Fotos: ${e.message}`);
       toast.error('Error al generar el Reporte Fotográfico.');
     } finally { setGenPdfFotos(false); }
+  };
+
+  const handleGenerateOficio = async () => {
+    localStorage.setItem('oficio_directorNombre', oficioForm.directorNombre);
+    localStorage.setItem('oficio_directorCargo', oficioForm.directorCargo);
+    localStorage.setItem('oficio_tipoAtencion', oficioForm.tipoAtencion);
+    localStorage.setItem('oficio_atencionNombre', oficioForm.atencionNombre);
+    localStorage.setItem('oficio_condicion', oficioForm.condicion);
+    localStorage.setItem('oficio_customCargo', oficioForm.customCargo);
+
+    const atencionCargo = oficioForm.tipoAtencion === 'Otro'
+      ? oficioForm.customCargo
+      : (oficioForm.tipoAtencion + ' ' + oficioForm.condicion).trim();
+
+    setGenOficio(true);
+    setShowOficioModal(false);
+    try {
+      const b = await generateOficioPdf(evaluation, user, {
+        directorNombre: oficioForm.directorNombre,
+        directorCargo: oficioForm.directorCargo,
+        atencionNombre: oficioForm.atencionNombre,
+        atencionCargo: atencionCargo,
+      });
+      setBackup(b); await load();
+      toast.success('Oficio de Evaluación generado correctamente.');
+      downloadBlob(b.pdfOficio, b.pdfOficioNombre);
+    } catch (e) {
+      await logEvent(LOG.ERROR, `Oficio: ${e.message}`);
+      toast.error('Error al generar el Oficio de Evaluación.');
+    } finally { setGenOficio(false); }
   };
 
   const handleDelete = async () => {
@@ -173,6 +213,16 @@ export default function EvaluationDetail() {
                 <Button variant="outline" icon={Share2} onClick={() => shareFile(backup.pdfFotos, backup.pdfFotosNombre)} testId="detail-share-pdf-fotos">Compartir Reporte Foto</Button>
               </div>
             )}
+            {/* Oficio de Evaluación */}
+            {!backup?.pdfOficio ? (
+              <Button onClick={() => setShowOficioModal(true)} loading={genOficio} icon={FileText} testId="detail-generate-oficio">Generar Oficio de Evaluación</Button>
+            ) : (
+              <div className="grid grid-cols-3 gap-2">
+                <Button variant="secondary" icon={Download} onClick={() => { downloadBlob(backup.pdfOficio, backup.pdfOficioNombre); logEvent(LOG.DESCARGA, backup.pdfOficioNombre); }} testId="detail-download-oficio">Descargar Oficio</Button>
+                <Button variant="outline" icon={Share2} onClick={() => shareFile(backup.pdfOficio, backup.pdfOficioNombre)} testId="detail-share-oficio">Compartir</Button>
+                <Button variant="outline" onClick={() => setShowOficioModal(true)} testId="detail-edit-oficio">Editar Oficio</Button>
+              </div>
+            )}
           </div>
         </Card>
 
@@ -182,6 +232,58 @@ export default function EvaluationDetail() {
 
       <ConfirmDialog open={confirm} title={TXT.confirmEliminar} description={TXT.confirmEliminarDesc}
         onConfirm={handleDelete} onCancel={() => setConfirm(false)} />
+
+      {showOficioModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+          <div className="bg-[hsl(var(--card))] border border-[hsl(var(--border))] rounded-[16px] w-full max-w-md p-6 shadow-2xl flex flex-col gap-4">
+            <h3 className="font-bold text-lg" style={{ fontWeight: 700 }}>Datos del Oficio</h3>
+            <p className="text-xs text-[hsl(var(--muted-foreground))]">Ingresa los datos del destinatario para generar el Oficio Oficial de Evaluación.</p>
+            
+            <div className="flex flex-col gap-3 max-h-[380px] overflow-y-auto pr-1">
+              <div>
+                <label className="text-xs font-semibold block mb-1">Nombre Director</label>
+                <input type="text" value={oficioForm.directorNombre} onChange={e => setOficioForm({...oficioForm, directorNombre: e.target.value})} className="w-full px-3 py-2 rounded-lg bg-[hsl(var(--muted))] border border-[hsl(var(--border))] text-sm focus:outline-none focus:ring-1 focus:ring-[hsl(var(--primary))]" />
+              </div>
+              
+              <div>
+                <label className="text-xs font-semibold block mb-1">Puesto Director</label>
+                <input type="text" value={oficioForm.directorCargo} onChange={e => setOficioForm({...oficioForm, directorCargo: e.target.value})} className="w-full px-3 py-2 rounded-lg bg-[hsl(var(--muted))] border border-[hsl(var(--border))] text-sm focus:outline-none focus:ring-1 focus:ring-[hsl(var(--primary))]" />
+              </div>
+
+              <div>
+                <label className="text-xs font-semibold block mb-1">Tipo de Atención</label>
+                <select value={oficioForm.tipoAtencion} onChange={e => setOficioForm({...oficioForm, tipoAtencion: e.target.value})} className="w-full px-3 py-2 rounded-lg bg-[hsl(var(--muted))] border border-[hsl(var(--border))] text-sm focus:outline-none focus:ring-1 focus:ring-[hsl(var(--primary))]" >
+                  <option value="Administrador">Administrador</option>
+                  <option value="Ingeniero de Conservación">Ingeniero de Conservación</option>
+                  <option value="Otro">Otro</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="text-xs font-semibold block mb-1">Nombre (Atención)</label>
+                <input type="text" value={oficioForm.atencionNombre} onChange={e => setOficioForm({...oficioForm, atencionNombre: e.target.value})} className="w-full px-3 py-2 rounded-lg bg-[hsl(var(--muted))] border border-[hsl(var(--border))] text-sm focus:outline-none focus:ring-1 focus:ring-[hsl(var(--primary))]" />
+              </div>
+
+              {oficioForm.tipoAtencion !== 'Otro' ? (
+                <div>
+                  <label className="text-xs font-semibold block mb-1">Especificar Cargo (ej. Encargado, Responsable, Titular)</label>
+                  <input type="text" value={oficioForm.condicion} onChange={e => setOficioForm({...oficioForm, condicion: e.target.value})} className="w-full px-3 py-2 rounded-lg bg-[hsl(var(--muted))] border border-[hsl(var(--border))] text-sm focus:outline-none focus:ring-1 focus:ring-[hsl(var(--primary))]" />
+                </div>
+              ) : (
+                <div>
+                  <label className="text-xs font-semibold block mb-1">Cargo a Especificar</label>
+                  <input type="text" value={oficioForm.customCargo} onChange={e => setOficioForm({...oficioForm, customCargo: e.target.value})} className="w-full px-3 py-2 rounded-lg bg-[hsl(var(--muted))] border border-[hsl(var(--border))] text-sm focus:outline-none focus:ring-1 focus:ring-[hsl(var(--primary))]" />
+                </div>
+              )}
+            </div>
+
+            <div className="flex justify-end gap-2 mt-2">
+              <Button variant="outline" onClick={() => setShowOficioModal(false)}>Cancelar</Button>
+              <Button onClick={handleGenerateOficio}>Generar</Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

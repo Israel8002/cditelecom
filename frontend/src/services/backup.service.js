@@ -1,4 +1,4 @@
-import { generatePDF, pdfFileName, generatePhotographicPDF, pdfFotosFileName } from './pdf.service';
+import { generatePDF, pdfFileName, generatePhotographicPDF, pdfFotosFileName, generateOficioPDF, pdfOficioFileName } from './pdf.service';
 import { buildEvaluationObject, serializeJSON, jsonFileName } from './json.service';
 import { saveBackup, saveEvaluation, getPhotos, getBackupByEvaluation, setConfig } from './storage.service';
 import { logEvent, LOG } from './log.service';
@@ -44,6 +44,17 @@ export async function generatePhotographicPdf(evaluation, user) {
   return b;
 }
 
+// Genera el Oficio PDF y lo almacena localmente.
+export async function generateOficioPdf(evaluation, user, oficioData) {
+  const pdfBytes = await generateOficioPDF(evaluation, user, oficioData);
+  const b = await upsertBackup(evaluation, {
+    pdfOficio: new Blob([pdfBytes], { type: 'application/pdf' }),
+    pdfOficioNombre: pdfOficioFileName(evaluation),
+  });
+  await logEvent(LOG.PDF, b.pdfOficioNombre);
+  return b;
+}
+
 // Genera únicamente el JSON y lo almacena localmente.
 export async function generateJson(evaluation, user) {
   const photos = await getPhotos(evaluation.id);
@@ -60,6 +71,20 @@ export async function generateJson(evaluation, user) {
 export async function generateBackup(evaluation, user) {
   await generatePdf(evaluation, user);
   await generatePhotographicPdf(evaluation, user);
+
+  // Pre-generar Oficio PDF con valores guardados por defecto o marcadores
+  const dirName = typeof localStorage !== 'undefined' ? localStorage.getItem('oficio_directorNombre') : '';
+  const dirCargo = typeof localStorage !== 'undefined' ? localStorage.getItem('oficio_directorCargo') : '';
+  const attName = typeof localStorage !== 'undefined' ? localStorage.getItem('oficio_atencionNombre') : '';
+  const attCargo = typeof localStorage !== 'undefined' ? localStorage.getItem('oficio_atencionCargo') : '';
+
+  await generateOficioPdf(evaluation, user, {
+    directorNombre: dirName || 'C. DIRECTOR DE LA UNIDAD',
+    directorCargo: dirCargo || 'Director de la Unidad',
+    atencionNombre: attName || 'ADMINISTRADOR DE LA UNIDAD',
+    atencionCargo: attCargo || 'Administrador del Sitio',
+  });
+
   const b = await generateJson(evaluation, user);
   await logEvent(LOG.RESPALDO, evaluation.id);
   return b;
