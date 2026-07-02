@@ -9,7 +9,7 @@ import ConfirmDialog from '../components/ConfirmDialog';
 import { getEvaluation, getPhotos, deleteEvaluationCascade, getBackupByEvaluation } from '../services/storage.service';
 import { getUnitById, getRoomById, getCityName, getAllQuestions, isQuestionVisible, getSectionName, computeScore } from '../services/catalog.service';
 import { useUserStore } from '../stores/user.store';
-import { generatePdf, generateJson, downloadBlob, shareFile } from '../services/backup.service';
+import { generatePdf, generatePhotographicPdf, downloadBlob, shareFile } from '../services/backup.service';
 import { logEvent, LOG } from '../services/log.service';
 import { TXT, ESTADO } from '../catalogs/constants';
 
@@ -23,7 +23,7 @@ export default function EvaluationDetail() {
   const [backup, setBackup] = useState(null);
   const [confirm, setConfirm] = useState(false);
   const [genPdf, setGenPdf] = useState(false);
-  const [genJson, setGenJson] = useState(false);
+  const [genPdfFotos, setGenPdfFotos] = useState(false);
 
   const load = useCallback(async () => {
     const e = await getEvaluation(id);
@@ -62,16 +62,16 @@ export default function EvaluationDetail() {
     } finally { setGenPdf(false); }
   };
 
-  const handleGenerateJson = async () => {
-    setGenJson(true);
+  const handleGeneratePdfFotos = async () => {
+    setGenPdfFotos(true);
     try {
-      const b = await generateJson(evaluation, user);
+      const b = await generatePhotographicPdf(evaluation, user);
       setBackup(b); await load();
-      toast.success('JSON generado correctamente.');
+      toast.success('Reporte Fotográfico generado correctamente.');
     } catch (e) {
-      await logEvent(LOG.ERROR, `JSON: ${e.message}`);
-      toast.error(TXT.errRespaldo);
-    } finally { setGenJson(false); }
+      await logEvent(LOG.ERROR, `PDF Fotos: ${e.message}`);
+      toast.error('Error al generar el Reporte Fotográfico.');
+    } finally { setGenPdfFotos(false); }
   };
 
   const handleDelete = async () => {
@@ -164,13 +164,13 @@ export default function EvaluationDetail() {
                 <Button variant="outline" icon={Share2} onClick={() => shareFile(backup.pdf, backup.pdfNombre)} testId="detail-share-pdf">Compartir PDF</Button>
               </div>
             )}
-            {/* JSON */}
-            {!backup?.json ? (
-              <Button onClick={handleGenerateJson} loading={genJson} icon={FileJson} testId="detail-generate-json">Generar JSON</Button>
+            {/* Reporte Fotográfico */}
+            {!backup?.pdfFotos ? (
+              <Button onClick={handleGeneratePdfFotos} loading={genPdfFotos} icon={ImageIcon} testId="detail-generate-pdf-fotos">Generar Reporte Fotográfico</Button>
             ) : (
               <div className="grid grid-cols-2 gap-2">
-                <Button variant="secondary" icon={Download} onClick={() => { downloadBlob(backup.json, backup.jsonNombre, 'application/json'); logEvent(LOG.DESCARGA, backup.jsonNombre); }} testId="detail-download-json">Descargar JSON</Button>
-                <Button variant="outline" icon={Share2} onClick={() => shareFile(backup.json, backup.jsonNombre, 'application/json')} testId="detail-share-json">Compartir JSON</Button>
+                <Button variant="secondary" icon={Download} onClick={() => { downloadBlob(backup.pdfFotos, backup.pdfFotosNombre); logEvent(LOG.DESCARGA, backup.pdfFotosNombre); }} testId="detail-download-pdf-fotos">Descargar Reporte Foto</Button>
+                <Button variant="outline" icon={Share2} onClick={() => shareFile(backup.pdfFotos, backup.pdfFotosNombre)} testId="detail-share-pdf-fotos">Compartir Reporte Foto</Button>
               </div>
             )}
           </div>

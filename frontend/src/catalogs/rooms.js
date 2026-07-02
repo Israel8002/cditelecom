@@ -29,6 +29,7 @@ export const rooms = [
   { id: 'ID29CUARTO7', unitId: 29, nombre: 'IDF CONSULTA ANEXOS' },
   { id: 'ID29CUARTO8', unitId: 29, nombre: 'IDF ADMISION GINECO' },
   { id: 'ID32CUARTO1', unitId: 32, nombre: 'MDF DIRECCION' },
+  { id: 'ID33CUARTO1', unitId: 33, nombre: 'MDF' },
   { id: 'ID35CUARTO1', unitId: 35, nombre: 'MDF' },
   { id: 'ID36CUARTO1', unitId: 36, nombre: 'MDF RACK' },
   { id: 'ID37CUARTO1', unitId: 37, nombre: 'MDF' },

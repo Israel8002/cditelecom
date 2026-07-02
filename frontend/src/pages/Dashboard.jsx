@@ -75,7 +75,6 @@ export default function Dashboard() {
       {/* Header */}
       <header className="px-6 pt-8 pb-4 flex items-start justify-between">
         <div>
-          <p className="text-[hsl(var(--muted-foreground))]">Hola,</p>
           <h1 className="text-2xl font-bold leading-tight" style={{ fontWeight: 700 }} data-testid="dash-username">
             {user?.nombre || 'Evaluador'}
           </h1>

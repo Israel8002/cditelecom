@@ -25,6 +25,7 @@ export default function NewEvaluation() {
   const user = useUserStore((s) => s.user);
   const { current, selectUnit, selectRoom, setAnswer, setObservacionesText, finalize } = useEvaluationStore();
   const [stepIndex, setStepIndex] = useState(0);
+  const [initialized, setInitialized] = useState(false);
 
   const visibleQs = useMemo(() => getVisibleQuestions(current.answers || {}), [current.answers]);
   const steps = useMemo(() => ['unit', 'room', 'info', 'photos', ...visibleQs.map((q) => q.id), 'resumen'], [visibleQs]);
@@ -36,6 +37,33 @@ export default function NewEvaluation() {
     if (stepIndex === 0) { navigate('/dashboard'); return; }
     setStepIndex((i) => Math.max(i - 1, 0));
   };
+
+  // Determinar el paso inicial al reanudar un borrador.
+  useEffect(() => {
+    if (current.id && !initialized) {
+      setInitialized(true);
+      if (current.estado === 'borrador' && current.unidad && current.cuarto) {
+        const firstUnansweredIndex = visibleQs.findIndex(
+          (q) => current.answers[q.id] === undefined || current.answers[q.id] === null || current.answers[q.id] === ''
+        );
+        if (firstUnansweredIndex !== -1) {
+          const answeredCount = Object.keys(current.answers || {}).length;
+          if (answeredCount === 0) {
+            setStepIndex(3); // Fotos
+          } else {
+            const qId = visibleQs[firstUnansweredIndex].id;
+            const idx = steps.indexOf(qId);
+            if (idx !== -1) setStepIndex(idx);
+          }
+        } else if (Object.keys(current.answers || {}).length > 0) {
+          setStepIndex(steps.indexOf('resumen'));
+        } else {
+          setStepIndex(3); // Fotos
+        }
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [current.id, initialized]);
 
   // Si no hay evaluación activa, regresar.
   useEffect(() => { if (!current.id) navigate('/dashboard', { replace: true }); }, [current.id, navigate]);

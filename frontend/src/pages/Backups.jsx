@@ -1,7 +1,10 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
-import { Database, Download, Share2, FileText } from 'lucide-react';
+import { Database, Download, Share2, FileText, Image as ImageIcon } from 'lucide-react';
+import Select from '../components/Select';
+import Input from '../components/Input';
+import { exportEvaluationsToExcel } from '../services/excel.service';
 import PageHeader from '../components/PageHeader';
 import Card from '../components/Card';
 import Button from '../components/Button';
@@ -21,6 +24,106 @@ export default function Backups() {
   const [backups, setBackups] = useState({});
   const [logs, setLogs] = useState([]);
   const [busy, setBusy] = useState(null);
+
+  const [filterType, setFilterType] = useState('all');
+  const [selectedYear, setSelectedYear] = useState(String(new Date().getFullYear()));
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
+
+  const yearsOptions = useMemo(() => {
+    const years = new Set();
+    evals.forEach((e) => {
+      if (e.fecha && e.fecha.includes('/')) {
+        const parts = e.fecha.split('/');
+        if (parts[2]) years.add(parts[2]);
+      }
+    });
+    if (years.size === 0) {
+      years.add(String(new Date().getFullYear()));
+    }
+    return Array.from(years)
+      .sort()
+      .reverse()
+      .map((y) => ({ value: y, label: String(y) }));
+  }, [evals]);
+
+  const handleExportExcel = () => {
+    let filtered = [...evals];
+    
+    if (filterType === 'year') {
+      filtered = evals.filter((e) => {
+        if (!e.fecha || !e.fecha.includes('/')) return false;
+        const year = e.fecha.split('/')[2];
+        return year === selectedYear;
+      });
+    } else if (filterType === 'range') {
+      const start = startDate ? new Date(startDate) : null;
+      const end = endDate ? new Date(endDate) : null;
+      if (start) start.setHours(0, 0, 0, 0);
+      if (end) end.setHours(23, 59, 59, 999);
+
+      filtered = evals.filter((e) => {
+        if (!e.fecha || !e.fecha.includes('/')) return false;
+        const [d, m, y] = e.fecha.split('/').map(Number);
+        const evalDate = new Date(y, m - 1, d);
+        if (start && evalDate < start) return false;
+        if (end && evalDate > end) return false;
+        return true;
+      });
+    }
+
+    if (filtered.length === 0) {
+      toast.error('No hay evaluaciones que coincidan con el filtro seleccionado.');
+      return;
+    }
+
+    try {
+      exportEvaluationsToExcel(filtered, user, `evaluaciones_respaldo.xlsx`);
+      toast.success('Excel exportado correctamente.');
+      logEvent(LOG.DESCARGA, 'evaluaciones_respaldo.xlsx');
+    } catch (err) {
+      toast.error('Error al exportar a Excel.');
+      logEvent(LOG.ERROR, `Excel: ${err.message}`);
+    }
+  };
+
+  const handleDlFotos = async (e, b) => {
+    if (b.pdfFotos) {
+      downloadBlob(b.pdfFotos, b.pdfFotosNombre);
+      logEvent(LOG.DESCARGA, b.pdfFotosNombre);
+    } else {
+      setBusy(e.id);
+      toast.info("Generando reporte fotográfico...");
+      try {
+        const updatedBk = await generateBackup(e, user);
+        await load();
+        downloadBlob(updatedBk.pdfFotos, updatedBk.pdfFotosNombre);
+        logEvent(LOG.DESCARGA, updatedBk.pdfFotosNombre);
+      } catch (err) {
+        toast.error("Error al generar reporte de fotos.");
+      } finally {
+        setBusy(null);
+      }
+    }
+  };
+
+  const handleShareFotos = async (e, b) => {
+    if (b.pdfFotos) {
+      shareFile(b.pdfFotos, b.pdfFotosNombre);
+    } else {
+      setBusy(e.id);
+      toast.info("Generando reporte fotográfico...");
+      try {
+        const updatedBk = await generateBackup(e, user);
+        await load();
+        shareFile(updatedBk.pdfFotos, updatedBk.pdfFotosNombre);
+      } catch (err) {
+        toast.error("Error al generar reporte de fotos.");
+      } finally {
+        setBusy(null);
+      }
+    }
+  };
 
   const load = async () => {
     const all = (await getAllEvaluations()).filter((e) => e.estado !== 'borrador');
@@ -51,6 +154,58 @@ export default function Backups() {
       <PageHeader title="Respaldos" subtitle="Genera y administra archivos" onBack={() => navigate('/dashboard')} />
 
       <div className="px-6">
+        {/* Export to Excel Card */}
+        {evals.length > 0 && (
+          <Card className="mb-6" padding="p-5">
+            <h2 className="text-lg font-semibold mb-2" style={{ fontWeight: 600 }}>Exportar Evaluaciones a Excel</h2>
+            <p className="text-sm text-[hsl(var(--muted-foreground))] mb-4">
+              Genera un archivo Excel (.xlsx) con los datos consolidados de las auditorías.
+            </p>
+            <div className="flex flex-col gap-4">
+              <Select
+                label="Tipo de Filtro"
+                value={filterType}
+                onChange={setFilterType}
+                options={[
+                  { value: 'all', label: 'Todas las evaluaciones' },
+                  { value: 'year', label: 'Por año' },
+                  { value: 'range', label: 'Por rango de fechas' }
+                ]}
+              />
+
+              {filterType === 'year' && (
+                <Select
+                  label="Seleccionar Año"
+                  value={selectedYear}
+                  onChange={setSelectedYear}
+                  options={yearsOptions}
+                />
+              )}
+
+              {filterType === 'range' && (
+                <div className="grid grid-cols-2 gap-3">
+                  <Input
+                    label="Fecha Inicio"
+                    type="date"
+                    value={startDate}
+                    onChange={setStartDate}
+                  />
+                  <Input
+                    label="Fecha Fin"
+                    type="date"
+                    value={endDate}
+                    onChange={setEndDate}
+                  />
+                </div>
+              )}
+
+              <Button onClick={handleExportExcel} icon={Download} testId="export-excel-btn">
+                Exportar a Excel
+              </Button>
+            </div>
+          </Card>
+        )}
+
         {evals.length === 0 ? (
           <EmptyState icon={Database} title="Sin evaluaciones" description="Realiza una evaluación para generar respaldos." testId="backups-empty" />
         ) : (
@@ -65,11 +220,17 @@ export default function Backups() {
                   {!b ? (
                     <Button icon={FileText} loading={busy === e.id} onClick={() => doGenerate(e)} testId={`backup-gen-${e.id}`}>Generar Respaldo</Button>
                   ) : (
-                    <div className="grid grid-cols-2 gap-2">
-                      <Button variant="secondary" icon={Download} onClick={() => { downloadBlob(b.pdf, b.pdfNombre); logEvent(LOG.DESCARGA, b.pdfNombre); }} testId={`backup-dl-pdf-${e.id}`}>PDF</Button>
-                      <Button variant="secondary" icon={Download} onClick={() => { downloadBlob(b.json, b.jsonNombre, 'application/json'); logEvent(LOG.DESCARGA, b.jsonNombre); }} testId={`backup-dl-json-${e.id}`}>JSON</Button>
-                      <Button variant="outline" icon={Share2} onClick={() => shareFile(b.pdf, b.pdfNombre)}>Compartir PDF</Button>
-                      <Button variant="outline" icon={Share2} onClick={() => shareFile(b.json, b.jsonNombre, 'application/json')}>Compartir JSON</Button>
+                    <div className="flex flex-col gap-2">
+                      <div className="grid grid-cols-3 gap-2">
+                        <Button variant="secondary" icon={Download} onClick={() => { downloadBlob(b.pdf, b.pdfNombre); logEvent(LOG.DESCARGA, b.pdfNombre); }} testId={`backup-dl-pdf-${e.id}`}>PDF</Button>
+                        <Button variant="secondary" icon={Download} onClick={() => handleDlFotos(e, b)} testId={`backup-dl-pdf-fotos-${e.id}`}>Fotos</Button>
+                        <Button variant="secondary" icon={Download} onClick={() => { downloadBlob(b.json, b.jsonNombre, 'application/json'); logEvent(LOG.DESCARGA, b.jsonNombre); }} testId={`backup-dl-json-${e.id}`}>JSON</Button>
+                      </div>
+                      <div className="grid grid-cols-3 gap-2">
+                        <Button variant="outline" icon={Share2} onClick={() => shareFile(b.pdf, b.pdfNombre)} testId={`backup-share-pdf-${e.id}`}>Compartir PDF</Button>
+                        <Button variant="outline" icon={Share2} onClick={() => handleShareFotos(e, b)} testId={`backup-share-pdf-fotos-${e.id}`}>Compartir Fotos</Button>
+                        <Button variant="outline" icon={Share2} onClick={() => shareFile(b.json, b.jsonNombre, 'application/json')} testId={`backup-share-json-${e.id}`}>Compartir JSON</Button>
+                      </div>
                     </div>
                   )}
                 </Card>

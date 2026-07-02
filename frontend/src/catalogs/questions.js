@@ -86,8 +86,8 @@ export const questions = [
   {
     id: 'Q011', titulo: 'Existen objetos ajenos', descripcion: '¿El cuarto está libre de objetos ajenos?',
     seccion: 'seguridad', tipo: 'radio', required: true, orden: 110, peso: 10, criticidad: 'Alta',
-    visible: true, visibleIf: null, opciones: ['Sí', 'No'],
-    recommendations: [{ when: 'No', text: 'Retirar objetos ajenos en el cuarto.' }],
+    visible: true, visibleIf: null, opciones: ['Libre de objetos ajenos', 'No esta libre'],
+    recommendations: [{ when: 'No esta libre', text: 'Retirar objetos ajenos en el cuarto.' }],
     jsonField: 'objetosAjenos', pdfField: 'Libre de objetos ajenos',
   },
   {

@@ -195,6 +195,178 @@ export function pdfFileName(evaluation) {
   return `Reporte_${evaluation.id}_${u}_${r}.pdf`;
 }
 
+export function pdfFotosFileName(evaluation) {
+  const unit = getUnitById(evaluation.unidad);
+  const room = getRoomById(evaluation.cuarto);
+  const u = sanitizeName(unit?.nombre || evaluation.unidad);
+  const r = sanitizeName(room?.nombre || evaluation.cuarto);
+  return `Reporte_Fotografico_${evaluation.id}_${u}_${r}.pdf`;
+}
+
+// Genera el PDF del Reporte Fotográfico. Devuelve Uint8Array.
+export async function generatePhotographicPDF(evaluation, user, photos) {
+  const doc = await PDFDocument.create();
+  const [W, H] = pdfLayout.pageSize;
+  const font = await doc.embedFont(StandardFonts.Helvetica);
+  const bold = await doc.embedFont(StandardFonts.HelveticaBold);
+  const italic = await doc.embedFont(StandardFonts.HelveticaOblique);
+  const M = pdfLayout.margin;
+
+  const unit = getUnitById(evaluation.unidad);
+  const room = getRoomById(evaluation.cuarto);
+
+  let page = doc.addPage([W, H]);
+  let y = H - M;
+
+  const center = (txt, size, f = bold) => {
+    const s = safeText(txt);
+    const w = f.widthOfTextAtSize(s, size);
+    page.drawText(s, { x: (W - w) / 2, y, size, font: f, color: BLACK });
+  };
+
+  // Encabezado principal (Página 1)
+  center("REPORTE FOTOGRÁFICO", 18); y -= 20;
+  center("Telecom - Informática", 12); y -= 15;
+  center("Control de Seguridad para Redes de Voz y Datos", 10); y -= 22;
+  page.drawLine({ start: { x: M, y }, end: { x: W - M, y }, thickness: 1, color: BLACK });
+  y -= 16;
+
+  // Datos de la unidad
+  const idValues = {
+    Unidad: unit ? `${unit.nombre} (ID ${unit.id})` : String(evaluation.unidad),
+    Cuarto: room?.nombre || String(evaluation.cuarto),
+    Evaluador: user?.nombre || '',
+    'Folio Evaluación': evaluation.id,
+    Fecha: `${evaluation.fecha} ${evaluation.hora}`,
+  };
+
+  const halfW = (W - 2 * M) / 2;
+  const idCols = [M, M + halfW];
+
+  const drawIdField = (label, x, cy) => {
+    if (!label) return;
+    const lbl = safeText(`${label}:`);
+    page.drawText(lbl, { x, y: cy, size: 9, font: bold, color: BLACK });
+    const lw = bold.widthOfTextAtSize(lbl, 9);
+    page.drawText(safeText(idValues[label] || ''), { x: x + lw + 5, y: cy, size: 9, font, color: BLACK });
+  };
+
+  drawIdField('Unidad', idCols[0], y);
+  drawIdField('Evaluador', idCols[1], y);
+  y -= 15;
+  drawIdField('Cuarto', idCols[0], y);
+  drawIdField('Folio Evaluación', idCols[1], y);
+  y -= 15;
+  drawIdField('Fecha', idCols[0], y);
+  y -= 15;
+
+  page.drawLine({ start: { x: M, y }, end: { x: W - M, y }, thickness: 0.6, color: BLACK });
+  y -= 25; // Espacio antes de empezar las fotos
+
+  if (!photos || photos.length === 0) {
+    y -= 50;
+    const noPhotosTxt = "No se agregaron fotografías en esta evaluación.";
+    const nptw = italic.widthOfTextAtSize(noPhotosTxt, 11);
+    page.drawText(noPhotosTxt, { x: (W - nptw) / 2, y, size: 11, font: italic, color: GRAY });
+  } else {
+    const boxW = 240;
+    const boxH = 180;
+    const colGap = W - 2 * M - 2 * boxW; // 612 - 80 - 480 = 52 pt
+
+    for (let idx = 0; idx < photos.length; idx++) {
+      const p = photos[idx];
+      const itemIndexOnPage = idx % 4;
+      const col = itemIndexOnPage % 2;
+      const row = Math.floor(itemIndexOnPage / 2);
+      const isFirstPage = idx < 4;
+
+      // Crear nueva página si toca la primera foto de una página subsecuente
+      if (idx > 0 && itemIndexOnPage === 0) {
+        page = doc.addPage([W, H]);
+        y = H - M;
+        // Dibujar mini cabecera
+        page.drawText("REPORTE FOTOGRÁFICO", { x: M, y: y - 10, size: 10, font: bold, color: BLACK });
+        const folioTxt = safeText(`Folio: ${evaluation.id}`);
+        const ftw = font.widthOfTextAtSize(folioTxt, 9);
+        page.drawText(folioTxt, { x: W - M - ftw, y: y - 10, size: 9, font, color: BLACK });
+        page.drawLine({ start: { x: M, y: y - 16 }, end: { x: W - M, y: y - 16 }, thickness: 0.5, color: GRAY });
+      }
+
+      // Calcular posiciones de la celda de la cuadrícula
+      const colX = col === 0 ? M : M + boxW + colGap;
+      const rowY = isFirstPage
+        ? (row === 0 ? H - 175 : H - 175 - 220)
+        : (row === 0 ? H - 75 : H - 75 - 220);
+
+      let image = null;
+      try {
+        const arrayBuffer = await p.blob.arrayBuffer();
+        if (p.blob.type === 'image/png') {
+          image = await doc.embedPng(arrayBuffer);
+        } else {
+          image = await doc.embedJpg(arrayBuffer);
+        }
+      } catch (err) {
+        console.error("Error al incrustar la imagen en el PDF:", err);
+      }
+
+      if (image) {
+        const scale = Math.min(boxW / image.width, boxH / image.height);
+        const w = image.width * scale;
+        const h = image.height * scale;
+        const x = colX + (boxW - w) / 2;
+        const yOffset = (boxH - h) / 2;
+        
+        // Borde gris claro alrededor de la caja
+        page.drawRectangle({
+          x: colX,
+          y: rowY - boxH,
+          width: boxW,
+          height: boxH,
+          borderColor: rgb(0.85, 0.85, 0.85),
+          borderWidth: 0.6
+        });
+        
+        // Dibujar imagen centrada en la caja
+        page.drawImage(image, { x, y: rowY - boxH + yOffset, width: w, height: h });
+      } else {
+        // Dibujar caja de error
+        page.drawRectangle({
+          x: colX,
+          y: rowY - boxH,
+          width: boxW,
+          height: boxH,
+          borderColor: rgb(0.8, 0, 0),
+          borderWidth: 0.8,
+          color: rgb(0.98, 0.95, 0.95)
+        });
+        const errTxt = safeText(`Error al cargar: ${p.nombre}`);
+        const tw = font.widthOfTextAtSize(errTxt, 8);
+        page.drawText(errTxt, { x: colX + (boxW - tw) / 2, y: rowY - (boxH / 2), size: 8, font, color: rgb(0.8, 0, 0) });
+      }
+
+      // Dibujar etiqueta abajo con truncamiento inteligente para evitar desbordes
+      let labelText = `Foto ${idx + 1}: ${p.nombre}`;
+      if (font.widthOfTextAtSize(labelText, 8) > boxW - 10) {
+        const extIndex = p.nombre.lastIndexOf('.');
+        const ext = extIndex !== -1 ? p.nombre.slice(extIndex) : '';
+        const base = extIndex !== -1 ? p.nombre.slice(0, extIndex) : p.nombre;
+        let baseLen = base.length;
+        while (baseLen > 0 && font.widthOfTextAtSize(`Foto ${idx + 1}: ${base.slice(0, baseLen)}...${ext}`, 8) > boxW - 10) {
+          baseLen--;
+        }
+        labelText = `Foto ${idx + 1}: ${base.slice(0, baseLen)}...${ext}`;
+      }
+
+      const lbl = safeText(labelText);
+      const lw = font.widthOfTextAtSize(lbl, 8);
+      page.drawText(lbl, { x: colX + (boxW - lw) / 2, y: rowY - boxH - 14, size: 8, font, color: BLACK });
+    }
+  }
+
+  return doc.save();
+}
+
 // Genera una URL de objeto para previsualización.
 export function bytesToBlobURL(bytes, type = 'application/pdf') {
   const blob = new Blob([bytes], { type });

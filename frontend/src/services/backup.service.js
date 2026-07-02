@@ -1,4 +1,4 @@
-import { generatePDF, pdfFileName } from './pdf.service';
+import { generatePDF, pdfFileName, generatePhotographicPDF, pdfFotosFileName } from './pdf.service';
 import { buildEvaluationObject, serializeJSON, jsonFileName } from './json.service';
 import { saveBackup, saveEvaluation, getPhotos, getBackupByEvaluation, setConfig } from './storage.service';
 import { logEvent, LOG } from './log.service';
@@ -32,6 +32,18 @@ export async function generatePdf(evaluation, user) {
   return b;
 }
 
+// Genera únicamente el PDF fotográfico y lo almacena localmente.
+export async function generatePhotographicPdf(evaluation, user) {
+  const photos = await getPhotos(evaluation.id);
+  const pdfBytes = await generatePhotographicPDF(evaluation, user, photos);
+  const b = await upsertBackup(evaluation, {
+    pdfFotos: new Blob([pdfBytes], { type: 'application/pdf' }),
+    pdfFotosNombre: pdfFotosFileName(evaluation),
+  });
+  await logEvent(LOG.PDF, b.pdfFotosNombre);
+  return b;
+}
+
 // Genera únicamente el JSON y lo almacena localmente.
 export async function generateJson(evaluation, user) {
   const photos = await getPhotos(evaluation.id);
@@ -47,6 +59,7 @@ export async function generateJson(evaluation, user) {
 // Genera PDF + JSON (respaldo completo).
 export async function generateBackup(evaluation, user) {
   await generatePdf(evaluation, user);
+  await generatePhotographicPdf(evaluation, user);
   const b = await generateJson(evaluation, user);
   await logEvent(LOG.RESPALDO, evaluation.id);
   return b;
