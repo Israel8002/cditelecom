@@ -1,66 +1,100 @@
 # Sistema de Evaluación de Cuartos de Telecomunicaciones (IMSS)
-### Coordinación Delegacional de Informática — OOAD Baja California
 
-Este proyecto es una Aplicación Web Progresiva (PWA) diseñada para que los ingenieros de telecomunicaciones del IMSS realicen auditorías y evaluaciones de cuartos de comunicaciones en sitio de forma **100% offline**.
+[![React Version](https://img.shields.io/badge/react-19.0.0-blue.svg)](https://react.dev/)
+[![PWA](https://img.shields.io/badge/PWA-100%25%20Offline-green.svg)](#)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![User Manual](https://img.shields.io/badge/Documentaci%C3%B3n-Manual%20de%20Usuario-brightgreen)](MANUAL_USUARIO.md)
 
-Para consultar la guía detallada de operación, instalación y características de la aplicación, por favor revisa el **[Manual de Usuario](MANUAL_USUARIO.md)**.
+### 🏥 Coordinación Delegacional de Informática — OOAD Baja California
+
+Este proyecto es una **Aplicación Web Progresiva (PWA)** diseñada para que los ingenieros de telecomunicaciones del IMSS realicen auditorías y evaluaciones de cuartos de comunicaciones en sitio de forma **100% offline-first**. 
+
+El sistema elimina el uso de papel y la dependencia de plataformas de terceros, ejecutándose de forma segura y directa en el navegador de cualquier dispositivo (móvil, tableta o computadora) sin necesidad de conexión activa a internet ni de servidores externos durante su operación.
 
 ---
 
-## Estructura del Proyecto
+## 🚀 Características Clave
 
-* **`/frontend`**: Aplicación de cliente desarrollada en **React 19 + CRACO (JavaScript)**. Utiliza TailwindCSS para estilos, IndexedDB (`idb`) para almacenamiento local y `pdf-lib` para la generación local de reportes institucionales en PDF.
-* **`/backend`**: API en **FastAPI + MongoDB (Motor/Pydantic)**. *Nota: Siguiendo las definiciones de arquitectura offline-first del PRD, esta carpeta se mantiene únicamente como referencia y no es requerida para el funcionamiento en producción del cliente.*
+* 📶 **Operación 100% Offline:** Funcionamiento garantizado en sótanos, zonas remotas o áreas sin cobertura de red. El Service Worker cachea todos los recursos críticos.
+* 💾 **Almacenamiento IndexedDB Seguro:** Persistencia local robusta a través de la librería `idb` para guardar perfiles, evaluaciones completadas, fotos (como Blobs) y borradores.
+* 📝 **Recuperación Inteligente de Borradores:** Si sales o cierras el navegador accidentalmente, el Dashboard detectará tu sesión activa y te permitirá reanudarla exactamente en el paso donde te quedaste sin repetir campos de registro.
+* 📄 **Generación Local de Reportes PDF (`pdf-lib`):**
+  * **Reporte de Evaluación:** Reporte formal institucional (formato 2025 de 2 columnas) con puntuaciones, clasificaciones de cumplimiento, recomendaciones técnicas y firma digital en Base64.
+  * **Reporte Fotográfico:** Cuadrícula de fotos 2x2 optimizada para impresión con protección contra fallos en renderizado.
+  * **Oficio de Evaluación:** Oficio formal dirigido a la dirección médica con justificación de texto al vuelo e integración directa de recomendaciones.
+* 📊 **Exportación a Excel (`xlsx`):** Módulo de filtrado avanzado (por año o rango de fechas) para descargar datos acumulados consolidados.
+* 📱 **Instalable (PWA):** Interfaz inmersiva a pantalla completa y acceso directo desde el escritorio en iOS, Android y Windows/macOS.
 
 ---
 
-## Guía de Desarrollo (Frontend)
+## 🛠️ Stack Tecnológico
 
-Para ejecutar o compilar el frontend localmente en tu entorno de desarrollo, sigue los siguientes pasos:
+El proyecto está diseñado bajo un enfoque modular y optimizado en peso para garantizar una rápida instalación y respuesta offline:
+
+* **Frontend Principal:** React 19, CRACO, TailwindCSS y componentes estilizados con Shadcn/ui.
+* **Manejo de Estados:** Zustand (ligero y óptimo para evitar re-renders innecesarios).
+* **Base de Datos Local:** IndexedDB manejado por la librería `idb`.
+* **Validación de Datos:** Zod (para asegurar la integridad de campos obligatorios, matrículas y firmas).
+* **Motor PDF:** `pdf-lib` para renderizar documentos binarios directamente en el cliente.
+* **Diseño Dinámico:** Framer Motion para micro-animaciones fluidas.
+
+---
+
+## 📁 Estructura del Proyecto
+
+* **`/frontend`**: Código fuente de la interfaz de usuario en React. Contiene las vistas del Dashboard, el Wizard de evaluaciones paso a paso, el visor de PDF y la exportación de respaldos.
+* **`/backend`**: Referencia de la API en FastAPI + MongoDB. *(Nota: Siguiendo las definiciones de arquitectura offline-first, esta carpeta se mantiene únicamente como referencia histórica/futura y no es requerida para el funcionamiento offline del cliente en producción).*
+* **`MANUAL_USUARIO.md`**: Manual técnico y operativo completo para usuarios e ingenieros administradores.
+
+---
+
+## 💻 Guía de Instalación y Desarrollo (Local)
+
+Para levantar o compilar el frontend localmente en tu máquina de desarrollo, realiza lo siguiente:
 
 ### 1. Requisitos Previos
-Asegúrate de tener instalado:
 * **Node.js** (versión 18 o superior recomendada)
 * **npm** o **Yarn**
 
 ### 2. Instalar Dependencias
-Dirígete a la carpeta del frontend e instala los paquetes necesarios:
+Accede a la carpeta `/frontend` e instala los paquetes requeridos:
 ```bash
 cd frontend
-# Si usas Yarn
-yarn install
-# Si usas npm
+
+# Usando npm (se recomienda usar --legacy-peer-deps por compatibilidad con React 19)
 npm install --legacy-peer-deps
+
+# O usando Yarn
+yarn install
 ```
 
-### 3. Ejecutar en Servidor de Desarrollo
-Para levantar el servidor de desarrollo local con recarga automática:
+### 3. Levantar Servidor de Desarrollo
+Para correr la aplicación de forma local con recarga en caliente:
 ```bash
-# Si usas Yarn
-yarn start
-# Si usas npm
+# Con npm
 npm start
+
+# Con Yarn
+yarn start
 ```
-La aplicación estará disponible en [http://localhost:3000](http://localhost:3000).
+Abre [http://localhost:3000](http://localhost:3000) en tu navegador.
 
 ### 4. Compilar para Producción (Build)
-Para generar el paquete optimizado listo para subir a un hosting gratuito (Vercel, Netlify, Cloudflare Pages, etc.):
+Para generar los archivos estáticos listos para subir a producción (por ejemplo, en plataformas como Vercel, Netlify, Cloudflare Pages o IIS local):
 ```bash
-# Si usas Yarn
-yarn build
-# Si usas npm
+# Con npm
 npm run build
+
+# Con Yarn
+yarn build
 ```
-Este comando creará una carpeta llamada **`build`** dentro de `/frontend`. El contenido de esa carpeta es todo lo que necesitas desplegar.
+Esto creará el directorio `/frontend/build` optimizado para producción.
+
+> [!IMPORTANT]
+> **Nota de Seguridad HTTPS:** Las capacidades de PWA (instalabilidad y Service Worker) y la geolocalización requieren obligatoriamente un entorno bajo **HTTPS** en producción. En localhost, las PWA funcionan bajo HTTP normal para pruebas de desarrollo.
 
 ---
 
-## Tecnologías Utilizadas en el Frontend
-* **React 19** - Librería para la interfaz de usuario.
-* **CRACO** - Configuración personalizada de la compilación de React.
-* **TailwindCSS** & **Shadcn/ui** - Diseño visual y componentes de interfaz premium.
-* **idb (IndexedDB)** - Almacenamiento local para evaluaciones, borradores, logs y fotos.
-* **Zustand** - Manejo de estados de la aplicación de forma ligera y ágil.
-* **Zod** - Validación de formularios de registro y datos técnicos.
-* **pdf-lib** - Motor cliente de generación de archivos PDF tamaño carta institucionales.
-* **Framer Motion** - Micro-animaciones y transiciones fluidas.
+## 📄 Licencia
+
+Este proyecto está bajo la licencia MIT. Consulta el archivo [LICENSE](LICENSE) para obtener más detalles.
