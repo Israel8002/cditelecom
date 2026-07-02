@@ -74,4 +74,9 @@ export const units = [
   { id: 71070, nombre: 'HOSPITAL COVID TIJUANA', cityId: 'TIJ', tipo: 'Hospital', activo: true },
   { id: 71389, nombre: 'CENTRO DE MEZCLAS UMAA 36', cityId: 'TIJ', tipo: 'Centro de Mezclas', activo: true },
   { id: 71498, nombre: 'HOSPITAL GENERAL REGIONAL 23', cityId: 'ENS', tipo: 'Hospital', activo: true },
+  { id: 71594, nombre: 'UMR CAMALÚ', cityId: 'ENS', tipo: 'UMR', activo: true },
+  { id: 71595, nombre: 'UMR LÁZARO CÁRDENAS', cityId: 'ENS', tipo: 'UMR', activo: true },
+  { id: 71616, nombre: 'UMR EJIDO PUNTA COLONET', cityId: 'ENS', tipo: 'UMR', activo: true },
+  { id: 71617, nombre: 'UMR SANTO TOMAS', cityId: 'ENS', tipo: 'UMR', activo: true },
+  { id: 71618, nombre: 'UMR EJIDO VILLA DE JESUS MARIA', cityId: 'ENS', tipo: 'UMR', activo: true },
 ];

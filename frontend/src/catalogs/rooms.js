@@ -178,4 +178,9 @@ export const rooms = [
   { id: 'ID71498CUARTO5', unitId: 71498, nombre: 'IDF 4 HEMODIALISIS' },
   { id: 'ID71498CUARTO6', unitId: 71498, nombre: 'IDF 5 PUESTO SANGRADO' },
   { id: 'ID71498CUARTO7', unitId: 71498, nombre: 'IDF 6 FINANZAS' },
+  { id: 'ID71594CUARTO1', unitId: 71594, nombre: 'MDF' },
+  { id: 'ID71595CUARTO1', unitId: 71595, nombre: 'MDF' },
+  { id: 'ID71616CUARTO1', unitId: 71616, nombre: 'MDF' },
+  { id: 'ID71617CUARTO1', unitId: 71617, nombre: 'MDF' },
+  { id: 'ID71618CUARTO1', unitId: 71618, nombre: 'MDF' },
 ];
