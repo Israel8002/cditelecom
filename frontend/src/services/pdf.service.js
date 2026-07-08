@@ -130,89 +130,178 @@ export async function generatePDF(evaluation, user) {
   page.drawLine({ start: { x: M, y }, end: { x: W - M, y }, thickness: 0.6, color: BLACK });
   y -= 16;
 
-  // ----- Cuerpo dinámico: todas las respuestas visibles, flujo a 2 columnas / multipágina -----
-  const footerReserve = 200;
-  const contentBottom = M + footerReserve;
+  // ----- Cuerpo dinámico: todas las respuestas visibles, flujo a 2 columnas / forzado a 1 sola página -----
+  let rowHeight = 13;
+  let headerHeight = 19;
+  let spacing = 4;
+  let fontSize = 8;
+  let sectionFontSize = 9;
+  let footerReserve = 200;
+  let obsBoxHeight = 100;
+  let legalFontSize = 7;
+  let legalLineHeight = 8.5;
+
+  let pageTop = y;
+  let contentBottom = M + footerReserve;
+
+  // Simulator function to check how many pages are required with current parameters
+  const simulateLayout = (rHeight, hHeight, sp, fReserve) => {
+    let currentY = pageTop;
+    let currentCol = 0;
+    let pagesCount = 1;
+    const cBottom = M + fReserve;
+
+    const testEnsure = (h) => {
+      if (currentY - h < cBottom) {
+        if (currentCol === 0) {
+          currentCol = 1;
+          currentY = pageTop;
+        } else {
+          pagesCount++;
+          currentY = pageTop;
+          currentCol = 0;
+        }
+      }
+    };
+
+    const sections = answeredBySection(answers);
+    sections.forEach((sec) => {
+      testEnsure(hHeight + rHeight);
+      currentY -= hHeight;
+      sec.preguntas.forEach(() => {
+        testEnsure(rHeight);
+        currentY -= rHeight;
+      });
+      currentY -= sp;
+    });
+
+    return pagesCount;
+  };
+
+  // Shrink parameters dynamically if layout requires more than 1 page
+  let pages = simulateLayout(rowHeight, headerHeight, spacing, footerReserve);
+  if (pages > 1) {
+    // Shrink level 1
+    rowHeight = 11.5;
+    headerHeight = 17;
+    spacing = 2;
+    fontSize = 7.5;
+    sectionFontSize = 8.5;
+    footerReserve = 180;
+    obsBoxHeight = 85;
+    legalFontSize = 6.5;
+    legalLineHeight = 8.0;
+    contentBottom = M + footerReserve;
+    pages = simulateLayout(rowHeight, headerHeight, spacing, footerReserve);
+  }
+  if (pages > 1) {
+    // Shrink level 2
+    rowHeight = 10.2;
+    headerHeight = 15;
+    spacing = 1;
+    fontSize = 7.0;
+    sectionFontSize = 8.0;
+    footerReserve = 160;
+    obsBoxHeight = 75;
+    legalFontSize = 6.0;
+    legalLineHeight = 7.2;
+    contentBottom = M + footerReserve;
+    pages = simulateLayout(rowHeight, headerHeight, spacing, footerReserve);
+  }
+  if (pages > 1) {
+    // Shrink level 3 (Maximum shrink)
+    rowHeight = 9.2;
+    headerHeight = 13;
+    spacing = 0;
+    fontSize = 6.0;
+    sectionFontSize = 7.2;
+    footerReserve = 140;
+    obsBoxHeight = 60;
+    legalFontSize = 5.2;
+    legalLineHeight = 6.5;
+    contentBottom = M + footerReserve;
+  }
+
   const colGap = 16;
   const colW = (W - 2 * M - colGap) / 2;
   const colX = [M, M + colW + colGap];
 
-  let pageTop = y;
   let cy = y;
   let col = 0;
 
   const ensure = (h) => {
     if (cy - h < contentBottom) {
       if (col === 0) { col = 1; cy = pageTop; }
-      else { page = doc.addPage([W, H]); pageTop = H - M; cy = pageTop; col = 0; }
+      // strictly lock to page 1, don't generate page 2
     }
   };
   const drawSectionHeader = (title) => {
-    ensure(19 + 13);
+    ensure(headerHeight + rowHeight);
     const x = colX[col];
-    page.drawRectangle({ x, y: cy - 12, width: colW, height: 14, color: HEADER_BG });
-    page.drawText(safeText(title), { x: x + 4, y: cy - 9, size: 9, font: bold, color: BLACK });
-    cy -= 19;
+    const boxHeight = Math.max(10, headerHeight - 5);
+    page.drawRectangle({ x, y: cy - (boxHeight - 2), width: colW, height: boxHeight, color: HEADER_BG });
+    page.drawText(safeText(title), { x: x + 4, y: cy - (boxHeight - 5), size: sectionFontSize, font: bold, color: BLACK });
+    cy -= headerHeight;
   };
   const drawRow = (label, value) => {
-    ensure(13);
+    ensure(rowHeight);
     const x = colX[col];
-    page.drawText(safeText(label), { x, y: cy, size: 8, font, color: BLACK });
+    page.drawText(safeText(label), { x, y: cy, size: fontSize, font, color: BLACK });
     const v = safeText(value);
-    const vw = bold.widthOfTextAtSize(v, 8);
-    page.drawText(v, { x: x + colW - vw, y: cy, size: 8, font: bold, color: BLACK });
+    const vw = bold.widthOfTextAtSize(v, fontSize);
+    page.drawText(v, { x: x + colW - vw, y: cy, size: fontSize, font: bold, color: BLACK });
     page.drawLine({ start: { x, y: cy - 4 }, end: { x: x + colW, y: cy - 4 }, thickness: 0.3, color: GRAY });
-    cy -= 13;
+    cy -= rowHeight;
   };
 
   answeredBySection(answers).forEach((sec) => {
     drawSectionHeader(sec.nombre);
     sec.preguntas.forEach((q) => drawRow(q.titulo, String(answers[q.id])));
-    cy -= 4;
+    cy -= spacing;
   });
 
-  // ----- Pie: Observaciones + Sello (misma fila) y nota legal, en la última página -----
+  // ----- Pie: Observaciones + Sello (misma fila) y nota legal -----
   const totalW = W - 2 * M;
   const gapOS = 12;
   const obsW = Math.round(totalW * 0.62);
   const sealW = totalW - obsW - gapOS;
   const sealX = M + obsW + gapOS;
-  const obsBoxHeight = 100;
   const obsLabelY = M + footerReserve - 12;
   const obsBoxTop = obsLabelY - 6;
   const obsBoxBottom = obsBoxTop - obsBoxHeight;
 
-  page.drawText('OBSERVACIONES', { x: M, y: obsLabelY, size: 10, font: bold, color: BLACK });
-  page.drawText(safeText(pdfLayout.sealLabel), { x: sealX, y: obsLabelY, size: 9, font: bold, color: BLACK });
+  page.drawText('OBSERVACIONES', { x: M, y: obsLabelY, size: 9, font: bold, color: BLACK });
+  page.drawText(safeText(pdfLayout.sealLabel), { x: sealX, y: obsLabelY, size: 8, font: bold, color: BLACK });
 
   page.drawRectangle({ x: M, y: obsBoxBottom, width: obsW, height: obsBoxHeight, borderColor: BLACK, borderWidth: 0.6 });
   page.drawRectangle({ x: sealX, y: obsBoxBottom, width: sealW, height: obsBoxHeight, borderColor: GRAY, borderWidth: 0.8, borderDashArray: [3, 3] });
 
   const obsText = (evaluation.observaciones || []).map((o) => `• ${safeText(o.text)}`).join('\n');
-  const obsLines = obsText ? obsText.split('\n').flatMap((l) => wrapText(l, font, 8, obsW - 12)) : [];
-  let ty = obsBoxTop - 13;
-  obsLines.slice(0, 6).forEach((l) => {
-    page.drawText(l, { x: M + 6, y: ty, size: 8, font, color: BLACK });
-    ty -= 12;
+  const obsLines = obsText ? obsText.split('\n').flatMap((l) => wrapText(l, font, fontSize, obsW - 12)) : [];
+  let ty = obsBoxTop - (fontSize + 5);
+  const maxObsLines = Math.floor((obsBoxHeight - 8) / (fontSize + 3));
+  obsLines.slice(0, maxObsLines).forEach((l) => {
+    page.drawText(l, { x: M + 6, y: ty, size: fontSize, font, color: BLACK });
+    ty -= (fontSize + 3);
   });
 
   // Fecha centrada al fondo del cuadro del sello.
   const dateStr = safeText(`${evaluation.fecha}   ${evaluation.hora}`);
-  const dw = font.widthOfTextAtSize(dateStr, 8);
-  page.drawText(dateStr, { x: sealX + (sealW - dw) / 2, y: obsBoxBottom + 8, size: 8, font, color: BLACK });
+  const dw = font.widthOfTextAtSize(dateStr, fontSize);
+  page.drawText(dateStr, { x: sealX + (sealW - dw) / 2, y: obsBoxBottom + 6, size: fontSize, font, color: BLACK });
 
   // Nota legal
   let ly = obsBoxBottom - 13;
-  page.drawText(safeText(pdfLayout.legalTitle), { x: M, y: ly, size: 8, font: bold, color: BLACK });
-  ly -= 10;
-  wrapText(safeText(pdfLayout.legalText), font, 7, totalW).forEach((l) => {
-    page.drawText(l, { x: M, y: ly, size: 7, font, color: BLACK });
-    ly -= 8.5;
+  page.drawText(safeText(pdfLayout.legalTitle), { x: M, y: ly, size: fontSize, font: bold, color: BLACK });
+  ly -= (legalLineHeight + 1);
+  wrapText(safeText(pdfLayout.legalText), font, legalFontSize, totalW).forEach((l) => {
+    page.drawText(l, { x: M, y: ly, size: legalFontSize, font, color: BLACK });
+    ly -= legalLineHeight;
   });
-  ly -= 3;
-  wrapText(safeText(pdfLayout.legalRef), font, 7, totalW).forEach((l) => {
-    page.drawText(l, { x: M, y: ly, size: 7, font: bold, color: BLACK });
-    ly -= 8.5;
+  ly -= 2;
+  wrapText(safeText(pdfLayout.legalRef), font, legalFontSize, totalW).forEach((l) => {
+    page.drawText(l, { x: M, y: ly, size: legalFontSize, font: bold, color: BLACK });
+    ly -= legalLineHeight;
   });
 
   return doc.save();

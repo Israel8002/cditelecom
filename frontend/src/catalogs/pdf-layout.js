@@ -37,6 +37,7 @@ export const pdfLayout = {
         { label: 'Temperatura 18-24°C', field: 'temperatura' },
         { label: 'Bitácora Accesos', field: 'bitacora' },
         { label: 'Bitácora Mantenimiento', field: 'bitacoraMantenimiento' },
+        { label: 'Señalización', field: 'senalizacion' },
         { label: 'Calendario Mantenimiento', field: 'calendarioMantenimiento' },
       ],
     },

@@ -157,6 +157,13 @@ export const questions = [
     jsonField: 'bitacoraMantenimiento', pdfField: 'Bitácora Mantenimiento',
   },
   {
+    id: 'Q051', titulo: '¿El cuarto cuenta con señalización?', descripcion: 'Señalamientos de seguridad y/o identificación del cuarto.',
+    seccion: 'control', tipo: 'radio', required: true, orden: 205, peso: 5, criticidad: 'Media',
+    visible: true, visibleIf: null, opciones: ['Sí', 'No'],
+    recommendations: [{ when: 'No', text: 'Instalar señalización de seguridad e identificación del cuarto.' }],
+    jsonField: 'senalizacion', pdfField: 'Señalización',
+  },
+  {
     id: 'Q043', titulo: 'Existe calendario de mantenimiento', descripcion: 'Calendario/programa de mantenimiento visible.',
     seccion: 'control', tipo: 'radio', required: true, orden: 206, peso: 5, criticidad: 'Media',
     visible: true, visibleIf: null, opciones: ['Cumple', 'No Cumple'],

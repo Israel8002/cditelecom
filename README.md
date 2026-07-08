@@ -18,12 +18,15 @@ El sistema elimina el uso de papel y la dependencia de plataformas de terceros, 
 * 📶 **Operación 100% Offline:** Funcionamiento garantizado en sótanos, zonas remotas o áreas sin cobertura de red. El Service Worker cachea todos los recursos críticos.
 * 💾 **Almacenamiento IndexedDB Seguro:** Persistencia local robusta a través de la librería `idb` para guardar perfiles, evaluaciones completadas, fotos (como Blobs) y borradores.
 * 📝 **Recuperación Inteligente de Borradores:** Si sales o cierras el navegador accidentalmente, el Dashboard detectará tu sesión activa y te permitirá reanudarla exactamente en el paso donde te quedaste sin repetir campos de registro.
+* 📦 **Inventario de Equipamiento en Sitio (v1.2.0):** Gestión offline de switches, ruteadores, UPS y más, mapeados a catálogos dinámicos (148 modelos). Permite registrar marcas/modelos personalizados y exportar hojas Excel dedicadas.
+  * **Escaneo de Código de Barras (Sin Permisos):** Integración nativa delegada a la cámara del sistema operativo para capturar números de serie sin requerir permisos del navegador.
+  * **Flujo Continuo de Captura:** Modal inteligente que limpia especificaciones de equipo manteniendo la ubicación intacta para cargas consecutivas rápidas.
+  * **Orden por Novedad:** Listado del inventario ordenado de forma automática mostrando el último dispositivo capturado al inicio.
 * 📄 **Generación Local de Reportes PDF (`pdf-lib`):**
-  * **Reporte de Evaluación:** Reporte formal institucional (formato 2025 de 2 columnas) con puntuaciones, clasificaciones de cumplimiento, recomendaciones técnicas y firma digital en Base64.
+  * **Reporte de Evaluación:** Reporte formal institucional (formato 2026 de 2 columnas) con puntuaciones, clasificaciones de cumplimiento, recomendaciones técnicas y firma digital en Base64. Cuenta con un algoritmo de **escalado dinámico inteligente para garantizar que el reporte quepa obligatoriamente en una sola página**.
   * **Reporte Fotográfico:** Cuadrícula de fotos 2x2 optimizada para impresión con protección contra fallos en renderizado.
   * **Oficio de Evaluación:** Oficio formal dirigido a la dirección médica con justificación de texto al vuelo e integración directa de recomendaciones.
 * 📊 **Exportación a Excel (`xlsx`):** Módulo de filtrado avanzado (por año o rango de fechas) para descargar datos acumulados consolidados.
-* 📦 **Inventario de Equipamiento en Sitio (v1.1.0):** Gestión offline de switches, ruteadores, UPS y más, mapeados a catálogos dinámicos (148 modelos). Permite registrar marcas/modelos personalizados y exportar hojas Excel dedicadas.
 * 📱 **Instalable (PWA):** Interfaz inmersiva a pantalla completa y acceso directo desde el escritorio en iOS, Android y Windows/macOS.
 
 ---

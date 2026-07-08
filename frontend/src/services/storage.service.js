@@ -113,10 +113,20 @@ export async function getEquipo(id) {
   return dbGet('equipos', id);
 }
 export async function getAllEquipos() {
-  return dbGetAll('equipos');
+  const all = await dbGetAll('equipos');
+  return all.sort((a, b) => {
+    const da = a.fechaRegistro || a.id || '';
+    const db = b.fechaRegistro || b.id || '';
+    return da < db ? 1 : -1;
+  });
 }
 export async function getEquiposByRoom(roomId) {
-  return dbGetAllByIndex('equipos', 'roomId', roomId);
+  const list = await dbGetAllByIndex('equipos', 'roomId', roomId);
+  return list.sort((a, b) => {
+    const da = a.fechaRegistro || a.id || '';
+    const db = b.fechaRegistro || b.id || '';
+    return da < db ? 1 : -1;
+  });
 }
 export async function deleteEquipo(id) {
   await dbDelete('equipos', id);

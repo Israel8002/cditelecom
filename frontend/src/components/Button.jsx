@@ -9,7 +9,7 @@ const variants = {
 
 export default function Button({
   children, onClick, variant = 'primary', disabled = false, loading = false,
-  icon: Icon, fullWidth = true, type = 'button', testId,
+  icon: Icon, fullWidth = true, type = 'button', testId, className = '',
 }) {
   return (
     <motion.button
@@ -21,7 +21,7 @@ export default function Button({
       disabled={disabled || loading}
       className={`${variants[variant]} ${fullWidth ? 'w-full' : ''} inline-flex items-center justify-center gap-2
         min-h-[56px] px-6 rounded-[18px] text-base font-600 font-semibold
-        disabled:opacity-50 disabled:cursor-not-allowed transition-colors`}
+        disabled:opacity-50 disabled:cursor-not-allowed transition-colors ${className}`}
       style={{ fontWeight: 600 }}
     >
       {loading ? (

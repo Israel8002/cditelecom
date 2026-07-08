@@ -1,6 +1,6 @@
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Package, Save } from 'lucide-react';
+import { Package, Save, Scan } from 'lucide-react';
 import { toast } from 'sonner';
 import PageHeader from '../components/PageHeader';
 import Card from '../components/Card';
@@ -12,6 +12,8 @@ import { useEquipmentStore } from '../stores/equipment.store';
 import { getCities, getUnitsByCity, getRoomsByUnit, getUnitById, getRoomById } from '../services/catalog.service';
 import { devicesCatalog } from '../catalogs/devices';
 import { logEvent } from '../services/log.service';
+import { Html5Qrcode } from 'html5-qrcode';
+import { AnimatePresence, motion } from 'framer-motion';
 
 export default function NewEquipment() {
   const navigate = useNavigate();
@@ -47,6 +49,51 @@ export default function NewEquipment() {
 
   // Validation errors
   const [errors, setErrors] = useState({});
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+
+  const fileInputRef = useRef(null);
+
+  const handleScanFile = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    toast.info('Procesando fotografía del código...');
+
+    try {
+      const scanner = new Html5Qrcode('hidden-scanner-mount');
+      const decodedText = await scanner.scanFile(file, false);
+      
+      // Beep sound
+      try {
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const oscillator = audioCtx.createOscillator();
+        const gainNode = audioCtx.createGain();
+        oscillator.connect(gainNode);
+        gainNode.connect(audioCtx.destination);
+        oscillator.type = 'sine';
+        oscillator.frequency.value = 1200;
+        gainNode.gain.setValueAtTime(0, audioCtx.currentTime);
+        gainNode.gain.linearRampToValueAtTime(0.2, audioCtx.currentTime + 0.05);
+        gainNode.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.2);
+        oscillator.start(audioCtx.currentTime);
+        oscillator.stop(audioCtx.currentTime + 0.2);
+      } catch (audioErr) {
+        console.warn("Beep failed:", audioErr);
+      }
+
+      if (navigator.vibrate) {
+        navigator.vibrate(100);
+      }
+
+      setNumeroSerie(decodedText);
+      toast.success(`Código detectado con éxito: ${decodedText}`);
+    } catch (err) {
+      console.error("Barcode scan error:", err);
+      toast.error('No se detectó ningún código legible. Intenta tomar la foto de más cerca, bien enfocada y con buena luz.');
+    } finally {
+      if (e.target) e.target.value = '';
+    }
+  };
 
   // Initial load
   useEffect(() => {
@@ -271,10 +318,41 @@ export default function NewEquipment() {
       await saveEquipo(data);
       await logEvent('INVENTARIO', `${isEdit ? 'Edición' : 'Registro'} de equipo: ${data.marca} ${data.modelo} (S/N: ${data.numeroSerie})`);
       toast.success(isEdit ? 'Equipo actualizado correctamente.' : 'Equipo agregado al inventario.');
-      navigate('/inventario');
+      
+      if (isEdit) {
+        navigate('/inventario');
+      } else {
+        setShowConfirmModal(true);
+      }
     } catch (err) {
       toast.error('Error al guardar el equipo.');
     }
+  };
+
+  const handleConfirmYes = () => {
+    // Reset device options fields (Option 2, 3, 4)
+    setTipo('');
+    setMarca('');
+    setCustomMarca('');
+    setModelo('');
+    setCustomModelo('');
+    setNumeroSerie('');
+    setEstado('Operativo');
+    setPuertosTotales('');
+    setPuertosOcupados('');
+    setMacAddress('');
+    setIpAddress('');
+    setObservaciones('');
+    setErrors({});
+    setShowConfirmModal(false);
+
+    // Scroll back to specifications card for next capture
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleConfirmNo = () => {
+    setShowConfirmModal(false);
+    navigate('/inventario');
   };
 
   return (
@@ -382,14 +460,38 @@ export default function NewEquipment() {
               />
             )}
 
-            <Input
-              label="Número de Serie"
-              value={numeroSerie}
-              onChange={setNumeroSerie}
-              placeholder="Ingresa el número de serie físico..."
-              error={errors.numeroSerie}
-              testId="eq-serial"
-            />
+            <div className="flex items-end gap-2">
+              <div className="flex-1">
+                <Input
+                  label="Número de Serie"
+                  value={numeroSerie}
+                  onChange={setNumeroSerie}
+                  placeholder="Ingresa el número de serie físico..."
+                  error={errors.numeroSerie}
+                  testId="eq-serial"
+                />
+              </div>
+              <Button
+                type="button"
+                variant="secondary"
+                fullWidth={false}
+                className="h-[56px] w-[56px] flex items-center justify-center p-0 rounded-[16px] border border-[hsl(var(--border))]"
+                onClick={() => fileInputRef.current?.click()}
+                title="Tomar foto del número de serie"
+                testId="eq-scan-serial-btn"
+              >
+                <Scan className="w-5.5 h-5.5 text-foreground" />
+              </Button>
+              <input
+                type="file"
+                accept="image/*"
+                capture="environment"
+                ref={fileInputRef}
+                className="hidden"
+                onChange={handleScanFile}
+              />
+              <div id="hidden-scanner-mount" className="hidden" />
+            </div>
           </div>
         </Card>
 
@@ -490,10 +592,41 @@ export default function NewEquipment() {
             onClick={handleSave}
             testId="eq-save-btn"
           >
-            Guardar Equipo
+            {isEdit ? 'Guardar Cambios' : 'Guardar Equipo'}
           </Button>
         </div>
       </div>
+
+      <AnimatePresence>
+        {showConfirmModal && (
+          <motion.div
+            className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 p-4"
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            onClick={handleConfirmNo}
+          >
+            <motion.div
+              className="w-full max-w-[560px] bg-[hsl(var(--card))] rounded-[20px] p-6 flex flex-col"
+              initial={{ y: 40 }} animate={{ y: 0 }} exit={{ y: 40 }} transition={{ duration: 0.25 }}
+              onClick={(e) => e.stopPropagation()}
+              data-testid="save-confirm-dialog"
+            >
+              <h3 className="text-lg font-semibold mb-2" style={{ fontWeight: 600 }}>Equipo Guardado</h3>
+              <p className="text-sm text-[hsl(var(--muted-foreground))] mb-6">
+                ¿Deseas registrar otro equipo en la ubicación <strong>{getRoomById(selectedRoom)?.nombre || 'seleccionada'}</strong>?
+              </p>
+              <div className="flex gap-3">
+                <Button variant="secondary" className="flex-1" onClick={handleConfirmNo} testId="confirm-no-btn">
+                  Salir
+                </Button>
+                <Button className="flex-1" onClick={handleConfirmYes} testId="confirm-yes-btn">
+                  Capturar Otro
+                </Button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
