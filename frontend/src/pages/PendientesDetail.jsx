@@ -1,6 +1,6 @@
 import { useEffect, useState, useMemo } from 'react';
 import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, CheckCircle, AlertTriangle, Calendar, MessageSquare } from 'lucide-react';
+import { ArrowLeft, CheckCircle, AlertTriangle, Calendar, MessageSquare, ChevronDown, ChevronRight } from 'lucide-react';
 import { toast } from 'sonner';
 import PageHeader from '../components/PageHeader';
 import Card from '../components/Card';
@@ -19,6 +19,8 @@ export default function PendientesDetail() {
   const activeTab = searchParams.get('tab') || 'pendientes'; // 'pendientes' | 'resueltos'
   const unit = getUnitById(Number(unitId));
 
+  // Accordion State
+  const [expandedRoomId, setExpandedRoomId] = useState(null);
   // Modal State
   const [selectedItem, setSelectedItem] = useState(null);
   const [resolutionComment, setResolutionComment] = useState('');
@@ -50,6 +52,17 @@ export default function PendientesDetail() {
 
     return Object.values(map).sort((a, b) => a.nombre.localeCompare(b.nombre));
   }, [pendientes, activeTab]);
+
+  // Auto-expand first room when loaded/updated
+  useEffect(() => {
+    if (groupedRooms.length > 0 && expandedRoomId === null) {
+      setExpandedRoomId(groupedRooms[0].id);
+    }
+  }, [groupedRooms, expandedRoomId]);
+
+  const toggleRoom = (roomId) => {
+    setExpandedRoomId((prev) => (prev === roomId ? null : roomId));
+  };
 
   const handleOpenResolve = (item) => {
     setSelectedItem(item);
@@ -129,72 +142,105 @@ export default function PendientesDetail() {
             </div>
           </Card>
         ) : (
-          groupedRooms.map((room) => (
-            <div key={room.id} className="flex flex-col gap-3">
-              <h3 className="text-sm font-semibold text-[hsl(var(--muted-foreground))] uppercase tracking-wider px-1">
-                {room.nombre}
-              </h3>
-              
-              <div className="flex flex-col gap-3">
-                {room.items.map((item) => (
-                  <Card key={item.id} padding="p-4" testId={`finding-${item.id}`}>
-                    <div className="flex flex-col gap-3">
-                      <div className="flex justify-between items-start gap-2">
-                        <h4 className="font-semibold text-base text-foreground leading-snug">
-                          {item.questionTitle}
-                        </h4>
-                        <span
-                          className={`text-xs px-2.5 py-1 rounded-full font-medium whitespace-nowrap shrink-0
-                            ${activeTab === 'pendientes'
-                              ? 'bg-[hsl(var(--destructive)/0.15)] text-[hsl(var(--destructive))]'
-                              : 'bg-[hsl(var(--success)/0.15)] text-[hsl(var(--success))]'}`}
-                        >
-                          {activeTab === 'pendientes' ? 'Pendiente' : 'Solucionado'}
-                        </span>
-                      </div>
-
-                      <div className="flex flex-col gap-1 text-sm text-[hsl(var(--muted-foreground))]">
-                        <p className="flex items-center gap-1.5">
-                          <AlertTriangle size={14} className="text-[hsl(var(--warning))]" />
-                          <span>Valor registrado: <strong>{item.originalAnswer}</strong></span>
-                        </p>
-                        <p className="flex items-center gap-1.5 mt-0.5">
-                          <Calendar size={14} />
-                          <span>Detectado el: {item.fechaDeteccion}</span>
-                        </p>
-                      </div>
-
-                      {/* Display Resolution Comment if Resolved */}
-                      {item.resolved && (
-                        <div className="mt-2 p-3 rounded-[12px] bg-[hsl(var(--muted))] border border-[hsl(var(--border))] flex flex-col gap-1.5">
-                          <p className="text-xs font-semibold text-[hsl(var(--muted-foreground))] flex items-center gap-1">
-                            <MessageSquare size={12} />
-                            Solución Aplicada ({formatDateString(item.resolvedAt)}):
-                          </p>
-                          <p className="text-sm text-foreground italic">
-                            "{item.resolutionComment}"
-                          </p>
-                        </div>
-                      )}
-
-                      {/* Action Button for Unresolved Pending Items */}
-                      {!item.resolved && (
-                        <div className="mt-1 flex justify-end">
-                          <Button
-                            className="h-9 text-xs px-4"
-                            onClick={() => handleOpenResolve(item)}
-                            testId={`resolve-btn-${item.id}`}
-                          >
-                            Resolver Hallazgo
-                          </Button>
-                        </div>
-                      )}
+          <div className="flex flex-col gap-4">
+            {groupedRooms.map((room) => {
+              const isExpanded = expandedRoomId === room.id;
+              return (
+                <div key={room.id} className="flex flex-col border border-[hsl(var(--border))] rounded-[16px] bg-[hsl(var(--card))] overflow-hidden transition-all duration-200">
+                  {/* Accordion Header */}
+                  <button
+                    onClick={() => toggleRoom(room.id)}
+                    className="w-full flex justify-between items-center px-5 py-4 hover:bg-[hsl(var(--muted)/0.3)] transition-colors text-left"
+                    data-testid={`room-accordion-header-${room.id}`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <span className="font-semibold text-base text-foreground">
+                        {room.nombre}
+                      </span>
+                      <span className="text-xs px-2.5 py-0.5 rounded-full font-medium bg-[hsl(var(--muted))] text-[hsl(var(--muted-foreground))]">
+                        {room.items.length} {room.items.length === 1 ? 'hallazgo' : 'hallazgos'}
+                      </span>
                     </div>
-                  </Card>
-                ))}
-              </div>
-            </div>
-          ))
+                    <div className="text-[hsl(var(--muted-foreground))]">
+                      {isExpanded ? <ChevronDown size={20} /> : <ChevronRight size={20} />}
+                    </div>
+                  </button>
+
+                  {/* Accordion Body */}
+                  <AnimatePresence initial={false}>
+                    {isExpanded && (
+                      <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: 'auto', opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.2 }}
+                        className="overflow-hidden"
+                      >
+                        <div className="px-5 pb-5 pt-1 flex flex-col gap-4 border-t border-[hsl(var(--border))]">
+                          {room.items.map((item) => (
+                            <div key={item.id} className="p-4 rounded-[12px] bg-[hsl(var(--muted)/0.35)] border border-[hsl(var(--border))] flex flex-col gap-3" data-testid={`finding-${item.id}`}>
+                              <div className="flex flex-col gap-3">
+                                <div className="flex justify-between items-start gap-2">
+                                  <h4 className="font-semibold text-base text-foreground leading-snug">
+                                    {item.questionTitle}
+                                  </h4>
+                                  <span
+                                    className={`text-xs px-2.5 py-1 rounded-full font-medium whitespace-nowrap shrink-0
+                                      ${activeTab === 'pendientes'
+                                        ? 'bg-[hsl(var(--destructive)/0.15)] text-[hsl(var(--destructive))]'
+                                        : 'bg-[hsl(var(--success)/0.15)] text-[hsl(var(--success))]'}`}
+                                  >
+                                    {activeTab === 'pendientes' ? 'Pendiente' : 'Solucionado'}
+                                  </span>
+                                </div>
+
+                                <div className="flex flex-col gap-1 text-sm text-[hsl(var(--muted-foreground))]">
+                                  <p className="flex items-center gap-1.5">
+                                    <AlertTriangle size={14} className="text-[hsl(var(--warning))]" />
+                                    <span>Valor registrado: <strong>{item.originalAnswer}</strong></span>
+                                  </p>
+                                  <p className="flex items-center gap-1.5 mt-0.5">
+                                    <Calendar size={14} />
+                                    <span>Detectado el: {item.fechaDeteccion}</span>
+                                  </p>
+                                </div>
+
+                                {/* Display Resolution Comment if Resolved */}
+                                {item.resolved && (
+                                  <div className="mt-2 p-3 rounded-[12px] bg-[hsl(var(--card))] border border-[hsl(var(--border))] flex flex-col gap-1.5">
+                                    <p className="text-xs font-semibold text-[hsl(var(--muted-foreground))] flex items-center gap-1">
+                                      <MessageSquare size={12} />
+                                      Solución Aplicada ({formatDateString(item.resolvedAt)}):
+                                    </p>
+                                    <p className="text-sm text-foreground italic">
+                                      "{item.resolutionComment}"
+                                    </p>
+                                  </div>
+                                )}
+
+                                {/* Action Button for Unresolved Pending Items */}
+                                {!item.resolved && (
+                                  <div className="mt-1 flex justify-end">
+                                    <Button
+                                      className="h-9 text-xs px-4"
+                                      onClick={() => handleOpenResolve(item)}
+                                      testId={`resolve-btn-${item.id}`}
+                                    >
+                                      Resolver Hallazgo
+                                    </Button>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              );
+            })}
+          </div>
         )}
       </div>
 

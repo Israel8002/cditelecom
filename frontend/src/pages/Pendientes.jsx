@@ -11,18 +11,11 @@ export default function Pendientes() {
   const navigate = useNavigate();
   const { pendientes, loading, sync, loadAll } = usePendienteStore();
   const [activeTab, setActiveTab] = useState('pendientes'); // 'pendientes' | 'resueltos'
-  const [syncing, setSyncing] = useState(false);
 
   useEffect(() => {
     loadAll();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
-  const handleSync = async () => {
-    setSyncing(true);
-    await sync();
-    setSyncing(false);
-  };
 
   // Group findings by Unit
   const groupedUnits = useMemo(() => {
@@ -55,7 +48,7 @@ export default function Pendientes() {
         onBack={() => navigate('/dashboard')}
       />
 
-      {/* Sync trigger & tab selector */}
+      {/* Tab selector */}
       <div className="px-6 mb-6 flex flex-col gap-4">
         <div className="flex gap-2 p-1 bg-[hsl(var(--muted))] rounded-[16px]">
           <button
@@ -79,28 +72,11 @@ export default function Pendientes() {
             Resueltos
           </button>
         </div>
-
-        <div className="flex justify-between items-center">
-          <p className="text-xs text-[hsl(var(--muted-foreground))]">
-            {activeTab === 'pendientes'
-              ? 'Unidades con hallazgos que requieren atención'
-              : 'Historial de hallazgos solucionados'}
-          </p>
-          <Button
-            variant="secondary"
-            className="h-8 text-xs gap-1.5 px-3 py-0 rounded-[10px] shrink-0"
-            onClick={handleSync}
-            disabled={syncing || loading}
-          >
-            <RefreshCw size={12} className={syncing ? 'animate-spin' : ''} />
-            Sincronizar
-          </Button>
-        </div>
       </div>
 
       {/* Unit Cards List */}
       <div className="px-6 flex flex-col gap-3">
-        {loading && !syncing ? (
+        {loading ? (
           <Card>
             <p className="text-center py-6 text-[hsl(var(--muted-foreground))] text-sm">
               Cargando hallazgos...
