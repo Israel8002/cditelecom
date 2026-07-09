@@ -32,7 +32,7 @@ export function exportEvaluationsToExcel(evaluations, equipos = [], user, filena
     const room = getRoomById(e.cuarto);
     const score = computeScore(e.answers || {});
     const recs = buildRecommendations(e.answers || {}).map(r => r.text).join('; ');
-    const obs = (e.observaciones || []).map(o => o.text).join('; ');
+    const obs = e.answers?.['Q042'] || '';
 
     const row = [
       e.id,

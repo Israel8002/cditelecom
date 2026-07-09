@@ -34,7 +34,11 @@ export function buildEvaluationObject(evaluation, user, photos = []) {
     puntaje,
     fotografias: photos.map((p) => ({ nombre: p.nombre, tipo: p.tipo, tamano: p.tamano, fecha: p.fecha })),
     respuestas: fields,
-    observaciones: evaluation.observaciones || [],
+    observaciones: (evaluation.answers?.['Q042'] || '')
+      .split('\n')
+      .map((l) => l.trim().replace(/^•\s*/, ''))
+      .filter((l) => l.length > 0)
+      .map((text) => ({ text, auto: false })),
     versionApp: appConfig.version,
     fechaGeneracion: new Date().toISOString(),
   };

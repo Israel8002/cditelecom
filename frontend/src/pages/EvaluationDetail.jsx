@@ -184,11 +184,15 @@ export default function EvaluationDetail() {
         ))}
 
         {/* Observaciones */}
-        {(evaluation.observaciones || []).length > 0 && (
+        {(evaluation.answers?.['Q042'] || '').trim().length > 0 && (
           <Card>
             <p className="font-semibold mb-2" style={{ fontWeight: 600 }}>Observaciones</p>
             <ul className="list-disc pl-5 flex flex-col gap-1.5 text-sm">
-              {evaluation.observaciones.map((o, i) => <li key={`${o.text}-${i}`}>{o.text}</li>)}
+              {(evaluation.answers['Q042'] || '')
+                .split('\n')
+                .map((l) => l.trim().replace(/^•\s*/, ''))
+                .filter((l) => l.length > 0)
+                .map((text, i) => <li key={i}>{text}</li>)}
             </ul>
           </Card>
         )}

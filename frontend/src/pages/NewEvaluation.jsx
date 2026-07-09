@@ -257,16 +257,20 @@ function StepResumen({ evaluation, user, onSave }) {
           ))}
         </div>
       </Card>
-      {obs.length > 0 && (
+      {(evaluation.answers?.['Q042'] || '').trim().length > 0 && (
         <Card className="mb-3">
           <p className="font-semibold mb-2" style={{ fontWeight: 600 }}>Observaciones</p>
           <ul className="flex flex-col gap-2">
-            {obs.map((o, i) => (
-              <li key={`${o.text}-${i}`} className="flex items-start gap-2 text-sm">
-                <Check size={16} className="text-primary mt-0.5 shrink-0" />
-                <span>{o.text}</span>
-              </li>
-            ))}
+            {(evaluation.answers['Q042'] || '')
+              .split('\n')
+              .map((l) => l.trim().replace(/^•\s*/, ''))
+              .filter((l) => l.length > 0)
+              .map((text, i) => (
+                <li key={i} className="flex items-start gap-2 text-sm">
+                  <Check size={16} className="text-primary mt-0.5 shrink-0" />
+                  <span>{text}</span>
+                </li>
+              ))}
           </ul>
         </Card>
       )}

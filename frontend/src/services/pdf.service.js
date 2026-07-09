@@ -277,12 +277,39 @@ export async function generatePDF(evaluation, user) {
   page.drawRectangle({ x: sealX, y: obsBoxBottom, width: sealW, height: obsBoxHeight, borderColor: GRAY, borderWidth: 0.8, borderDashArray: [3, 3] });
 
   const obsText = evaluation.answers['Q042'] || '';
-  const obsLines = obsText ? obsText.split('\n').flatMap((l) => wrapText(l, font, fontSize, obsW - 12)) : [];
-  let ty = obsBoxTop - (fontSize + 5);
-  const maxObsLines = Math.floor((obsBoxHeight - 8) / (fontSize + 3));
-  obsLines.slice(0, maxObsLines).forEach((l) => {
-    page.drawText(l, { x: M + 6, y: ty, size: fontSize, font, color: BLACK });
-    ty -= (fontSize + 3);
+  const obsLines = obsText
+    .split('\n')
+    .map((l) => l.trim())
+    .filter((l) => l.length > 0);
+
+  let obsFontSize = Math.max(4.8, fontSize - 1.5);
+  let obsLineHeight = obsFontSize + 2.0;
+
+  const padding = 6;
+  const innerW = obsW - 2 * padding;
+  const obsColGap = 8;
+  const subColW = (innerW - obsColGap) / 2;
+
+  let wrappedLines = obsLines.flatMap((l) => wrapText(l, font, obsFontSize, subColW));
+
+  const availableHeight = obsBoxHeight - 8;
+  let linesPerCol = Math.floor(availableHeight / obsLineHeight);
+  let totalCapacity = linesPerCol * 2;
+
+  if (wrappedLines.length > totalCapacity) {
+    obsFontSize = 4.8;
+    obsLineHeight = 6.2;
+    wrappedLines = obsLines.flatMap((l) => wrapText(l, font, obsFontSize, subColW));
+    linesPerCol = Math.floor(availableHeight / obsLineHeight);
+    totalCapacity = linesPerCol * 2;
+  }
+
+  wrappedLines.slice(0, totalCapacity).forEach((line, idx) => {
+    const isCol2 = idx >= linesPerCol;
+    const x = isCol2 ? M + padding + subColW + obsColGap : M + padding;
+    const lineIdxInCol = isCol2 ? idx - linesPerCol : idx;
+    const yPos = obsBoxTop - padding - (lineIdxInCol * obsLineHeight) - obsFontSize;
+    page.drawText(line, { x, y: yPos, size: obsFontSize, font, color: BLACK });
   });
 
   // Fecha centrada al fondo del cuadro del sello.

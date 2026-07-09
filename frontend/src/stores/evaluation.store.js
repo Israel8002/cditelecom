@@ -66,12 +66,18 @@ export const useEvaluationStore = create((set, get) => ({
     set((s) => {
       const answers = { ...s.current.answers, [questionId]: value };
       const current = { ...s.current, answers };
-      // recalcular recomendaciones automáticas (respetando las eliminadas manualmente)
-      const autoRecs = buildRecommendations(answers)
-        .filter((r) => !current.manualRemoved.includes(r.text))
-        .map((r) => ({ text: r.text, auto: true }));
-      const manual = current.observaciones.filter((o) => !o.auto);
-      current.observaciones = [...autoRecs, ...manual];
+      
+      const obsText = answers['Q042'] || '';
+      if (obsText) {
+        const lines = obsText
+          .split('\n')
+          .map((l) => l.trim().replace(/^•\s*/, ''))
+          .filter((l) => l.length > 0);
+        current.observaciones = lines.map((text) => ({ text, auto: false }));
+      } else {
+        const autoRecs = buildRecommendations(answers).map((r) => ({ text: r.text, auto: true }));
+        current.observaciones = autoRecs;
+      }
       return { current };
     });
     await get().persist();
@@ -79,9 +85,12 @@ export const useEvaluationStore = create((set, get) => ({
 
   setObservacionesText: async (text) => {
     set((s) => {
-      const others = s.current.observaciones.filter((o) => o.kind !== 'libre');
-      const list = text ? [...others, { text, auto: false, kind: 'libre' }] : others;
-      return { current: { ...s.current, observaciones: list } };
+      const lines = (text || '')
+        .split('\n')
+        .map((l) => l.trim().replace(/^•\s*/, ''))
+        .filter((l) => l.length > 0);
+      const observaciones = lines.map((line) => ({ text: line, auto: false }));
+      return { current: { ...s.current, observaciones } };
     });
     await get().persist();
   },
