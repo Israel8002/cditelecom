@@ -11,6 +11,8 @@ import Backups from '@/pages/Backups';
 import Settings from '@/pages/Settings';
 import Inventory from '@/pages/Inventory';
 import NewEquipment from '@/pages/NewEquipment';
+import Pendientes from '@/pages/Pendientes';
+import PendientesDetail from '@/pages/PendientesDetail';
 
 function App() {
   return (
@@ -28,6 +30,8 @@ function App() {
         <Route path="/inventario" element={<Inventory />} />
         <Route path="/inventario/nuevo" element={<NewEquipment />} />
         <Route path="/inventario/editar/:id" element={<NewEquipment />} />
+        <Route path="/pendientes" element={<Pendientes />} />
+        <Route path="/pendientes/unidad/:unitId" element={<PendientesDetail />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>

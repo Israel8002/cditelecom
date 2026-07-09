@@ -10,7 +10,7 @@ import Button from '../components/Button';
 import QuestionView from '../components/wizard/QuestionView';
 import { useUserStore } from '../stores/user.store';
 import { useEvaluationStore } from '../stores/evaluation.store';
-import { getUnitsByCity, getRoomsByUnit, getVisibleQuestions, getUnitById, getRoomById, getCityName } from '../services/catalog.service';
+import { getUnitsByCity, getRoomsByUnit, getVisibleQuestions, getUnitById, getRoomById, getCityName, buildRecommendations } from '../services/catalog.service';
 import { addPhoto, getPhotos, deletePhoto } from '../services/storage.service';
 import { logEvent, LOG } from '../services/log.service';
 
@@ -65,6 +65,19 @@ export default function NewEvaluation() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [current.id, initialized]);
 
+  // Pre-populate observations (Q042) with auto-generated recommendations
+  useEffect(() => {
+    if (step === 'Q042') {
+      const currentAns = current.answers['Q042'];
+      if (currentAns === undefined || currentAns === null || currentAns === '') {
+        const autoRecs = buildRecommendations(current.answers || {});
+        const generated = autoRecs.map((r) => `• ${r.text}`).join('\n');
+        setAnswer('Q042', generated);
+        setObservacionesText(generated);
+      }
+    }
+  }, [step, current.answers, setAnswer, setObservacionesText]);
+
   // Si no hay evaluación activa, regresar.
   useEffect(() => { if (!current.id) navigate('/dashboard', { replace: true }); }, [current.id, navigate]);
 
@@ -87,7 +100,7 @@ export default function NewEvaluation() {
               <QuestionView
                 question={visibleQs.find((q) => q.id === step)}
                 value={current.answers[step]}
-                onAnswer={(v) => { setAnswer(step, v); if (step === 'Q041') setObservacionesText(v); }}
+                onAnswer={(v) => { setAnswer(step, v); if (step === 'Q042') setObservacionesText(v); }}
                 onNext={next}
               />
             )}

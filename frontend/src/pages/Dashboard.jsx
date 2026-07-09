@@ -199,9 +199,10 @@ export default function Dashboard() {
 
       {/* Acciones rápidas */}
       <div className="px-6 flex flex-col gap-3 mb-6">
-        <div className="grid grid-cols-2 gap-3">
-          <Button onClick={newEvaluation} icon={Plus} testId="dash-nueva-btn">Nueva Evaluación</Button>
+        <div className="grid grid-cols-3 gap-3">
+          <Button onClick={newEvaluation} icon={Plus} testId="dash-nueva-btn">Evaluación</Button>
           <Button onClick={() => navigate('/inventario')} icon={Package} variant="secondary" testId="dash-inventario-btn">Inventario</Button>
+          <Button onClick={() => navigate('/pendientes')} icon={AlertCircle} variant="secondary" testId="dash-pendientes-btn">Pendientes</Button>
         </div>
         <div className="grid grid-cols-3 gap-3">
           <Button variant="secondary" icon={ClipboardList} fullWidth onClick={() => navigate('/historial')} testId="dash-historial-btn">Historial</Button>

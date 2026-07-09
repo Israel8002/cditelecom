@@ -21,7 +21,6 @@ export async function getUser() {
   return dbGet('usuarios', USER_ID);
 }
 
-// ---------------- EVALUACIONES ----------------
 export async function saveEvaluation(evaluation) {
   const now = new Date().toISOString();
   const data = {
@@ -31,6 +30,47 @@ export async function saveEvaluation(evaluation) {
     version: 1,
   };
   await dbPut('evaluaciones', data);
+
+  // Auto-sync findings to 'pendientes' store if the evaluation is finalized
+  if (data.estado !== 'borrador') {
+    try {
+      const questions = getAllQuestions();
+      const answers = data.answers || {};
+      for (const q of questions) {
+        const answerVal = answers[q.id];
+        const idKey = `${data.id}_${q.id}`;
+        const isAFinding = isFinding(q, answerVal);
+
+        if (isAFinding) {
+          const existing = await dbGet('pendientes', idKey);
+          if (!existing) {
+            const newPendiente = {
+              id: idKey,
+              evaluationId: data.id,
+              unidadId: Number(data.unidad),
+              roomId: data.cuarto,
+              questionId: q.id,
+              questionTitle: q.titulo,
+              originalAnswer: answerVal,
+              resolved: false,
+              resolvedAt: null,
+              resolutionComment: null,
+              fechaDeteccion: data.fecha,
+            };
+            await dbPut('pendientes', newPendiente);
+          }
+        } else {
+          const existing = await dbGet('pendientes', idKey);
+          if (existing && !existing.resolved) {
+            await dbDelete('pendientes', idKey);
+          }
+        }
+      }
+    } catch (err) {
+      console.error("Error auto-syncing findings on saveEvaluation:", err);
+    }
+  }
+
   return data;
 }
 export async function getEvaluation(id) {
@@ -142,6 +182,81 @@ export async function setConfig(key, value) {
 export async function getConfig(key) {
   const r = await dbGet('configuracion', key);
   return r?.value;
+}
+
+// ---------------- PENDIENTES ----------------
+import { getAllQuestions } from './catalog.service';
+import { NEUTRAL_VALUES } from '../catalogs/questions';
+
+const PENDIENTES_QUESTIONS_SET = new Set([
+  'Q002', 'Q003', 'Q004', 'Q005', 'Q006', 'Q007', 'Q008', 'Q009', 'Q010', 'Q011',
+  'Q013', 'Q014', 'Q016', 'Q017', 'Q018', 'Q019', 'Q020', 'Q021', 'Q022', 'Q027',
+  'Q037', 'Q038', 'Q039', 'Q040', 'Q041'
+]);
+
+export function isFinding(question, answer) {
+  if (!question || !PENDIENTES_QUESTIONS_SET.has(question.id)) return false;
+  if (answer === undefined || answer === null || answer === '') return false;
+  if (NEUTRAL_VALUES.has(answer)) return false;
+  return answer !== question.opciones[0];
+}
+
+export async function savePendiente(pendiente) {
+  await dbPut('pendientes', pendiente);
+  return pendiente;
+}
+
+export async function getPendiente(id) {
+  return dbGet('pendientes', id);
+}
+
+export async function getAllPendientes() {
+  return dbGetAll('pendientes');
+}
+
+export async function getPendientesByUnit(unitId) {
+  return dbGetAllByIndex('pendientes', 'unidadId', Number(unitId));
+}
+
+export async function syncPendientesFromEvaluations() {
+  const evaluations = await dbGetAll('evaluaciones');
+  const finalized = evaluations.filter((e) => e.estado !== 'borrador');
+  const questions = getAllQuestions();
+  const currentPendientes = await dbGetAll('pendientes');
+  const currentMap = new Map(currentPendientes.map((p) => [p.id, p]));
+
+  for (const evalObj of finalized) {
+    const answers = evalObj.answers || {};
+    for (const q of questions) {
+      const answerVal = answers[q.id];
+      const idKey = `${evalObj.id}_${q.id}`;
+      const isAFinding = isFinding(q, answerVal);
+
+      if (isAFinding) {
+        if (!currentMap.has(idKey)) {
+          const newPendiente = {
+            id: idKey,
+            evaluationId: evalObj.id,
+            unidadId: Number(evalObj.unidad),
+            roomId: evalObj.cuarto,
+            questionId: q.id,
+            questionTitle: q.titulo,
+            originalAnswer: answerVal,
+            resolved: false,
+            resolvedAt: null,
+            resolutionComment: null,
+            fechaDeteccion: evalObj.fecha,
+          };
+          await dbPut('pendientes', newPendiente);
+        }
+      } else {
+        const existing = currentMap.get(idKey);
+        if (existing && !existing.resolved) {
+          await dbDelete('pendientes', idKey);
+        }
+      }
+    }
+  }
 }
 
 // ---------------- ALMACENAMIENTO ----------------

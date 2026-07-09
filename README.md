@@ -18,7 +18,7 @@ El sistema elimina el uso de papel y la dependencia de plataformas de terceros, 
 * 📶 **Operación 100% Offline:** Funcionamiento garantizado en sótanos, zonas remotas o áreas sin cobertura de red. El Service Worker cachea todos los recursos críticos.
 * 💾 **Almacenamiento IndexedDB Seguro:** Persistencia local robusta a través de la librería `idb` para guardar perfiles, evaluaciones completadas, fotos (como Blobs) y borradores.
 * 📝 **Recuperación Inteligente de Borradores:** Si sales o cierras el navegador accidentalmente, el Dashboard detectará tu sesión activa y te permitirá reanudarla exactamente en el paso donde te quedaste sin repetir campos de registro.
-* 📦 **Inventario de Equipamiento en Sitio (v1.2.0):** Gestión offline de switches, ruteadores, UPS y más, mapeados a catálogos dinámicos (148 modelos). Permite registrar marcas/modelos personalizados y exportar hojas Excel dedicadas.
+* 📦 **Inventario de Equipamiento en Sitio (v1.3.0):** Gestión offline de switches, ruteadores, UPS y más, mapeados a catálogos dinámicos (148 modelos). Permite registrar marcas/modelos personalizados y exportar hojas Excel dedicadas.
   * **Escaneo de Código de Barras (Sin Permisos):** Integración nativa delegada a la cámara del sistema operativo para capturar números de serie sin requerir permisos del navegador.
   * **Flujo Continuo de Captura:** Modal inteligente que limpia especificaciones de equipo manteniendo la ubicación intacta para cargas consecutivas rápidas.
   * **Orden por Novedad:** Listado del inventario ordenado de forma automática mostrando el último dispositivo capturado al inicio.

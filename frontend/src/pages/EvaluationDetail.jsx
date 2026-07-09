@@ -56,7 +56,7 @@ export default function EvaluationDetail() {
     if (!isQuestionVisible(q, answers)) return;
     const v = answers[q.id];
     if (v === undefined || v === '' || v === null) return;
-    if (q.id === 'Q041') return;
+    if (q.id === 'Q042') return;
     (sectionsData[q.seccion] = sectionsData[q.seccion] || []).push({ id: q.id, titulo: q.titulo, value: v });
   });
 

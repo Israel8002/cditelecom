@@ -69,7 +69,7 @@ function answeredBySection(answers) {
       nombre: sec.nombre,
       preguntas: getAllQuestions().filter(
         (q) => q.seccion === sec.id
-          && q.id !== 'Q041'
+          && q.id !== 'Q042'
           && isQuestionVisible(q, answers)
           && answers[q.id] !== undefined && answers[q.id] !== null && answers[q.id] !== '',
       ),
@@ -276,7 +276,7 @@ export async function generatePDF(evaluation, user) {
   page.drawRectangle({ x: M, y: obsBoxBottom, width: obsW, height: obsBoxHeight, borderColor: BLACK, borderWidth: 0.6 });
   page.drawRectangle({ x: sealX, y: obsBoxBottom, width: sealW, height: obsBoxHeight, borderColor: GRAY, borderWidth: 0.8, borderDashArray: [3, 3] });
 
-  const obsText = (evaluation.observaciones || []).map((o) => `• ${safeText(o.text)}`).join('\n');
+  const obsText = evaluation.answers['Q042'] || '';
   const obsLines = obsText ? obsText.split('\n').flatMap((l) => wrapText(l, font, fontSize, obsW - 12)) : [];
   let ty = obsBoxTop - (fontSize + 5);
   const maxObsLines = Math.floor((obsBoxHeight - 8) / (fontSize + 3));
