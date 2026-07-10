@@ -53,12 +53,7 @@ export default function PendientesDetail() {
     return Object.values(map).sort((a, b) => a.nombre.localeCompare(b.nombre));
   }, [pendientes, activeTab]);
 
-  // Auto-expand first room when loaded/updated
-  useEffect(() => {
-    if (groupedRooms.length > 0 && expandedRoomId === null) {
-      setExpandedRoomId(groupedRooms[0].id);
-    }
-  }, [groupedRooms, expandedRoomId]);
+
 
   const toggleRoom = (roomId) => {
     setExpandedRoomId((prev) => (prev === roomId ? null : roomId));
