@@ -1,7 +1,7 @@
 import { useEffect, useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
-import { Database, Download, Share2, FileText, Image as ImageIcon } from 'lucide-react';
+import { Database, Download, Share2, FileText, Image as ImageIcon, Upload, Archive } from 'lucide-react';
 import Select from '../components/Select';
 import Input from '../components/Input';
 import { exportEvaluationsToExcel, exportEquipmentToExcel } from '../services/excel.service';
@@ -16,6 +16,7 @@ import { generateBackup, downloadBlob, shareFile } from '../services/backup.serv
 import { getLogs, logEvent, LOG } from '../services/log.service';
 import { useUserStore } from '../stores/user.store';
 import { TXT, ESTADO } from '../catalogs/constants';
+import { exportDatabaseToZip, importDatabaseFromZip } from '../services/importExport.service';
 
 export default function Backups() {
   const navigate = useNavigate();
@@ -24,6 +25,7 @@ export default function Backups() {
   const [backups, setBackups] = useState({});
   const [logs, setLogs] = useState([]);
   const [busy, setBusy] = useState(null);
+  const [importing, setImporting] = useState(false);
 
   const [filterType, setFilterType] = useState('all');
   const [selectedYear, setSelectedYear] = useState(String(new Date().getFullYear()));
@@ -101,6 +103,38 @@ export default function Backups() {
     } catch (err) {
       toast.error('Error al exportar el inventario.');
       logEvent(LOG.ERROR, `Excel Inventario: ${err.message}`);
+    }
+  };
+
+  const handleExportZip = async () => {
+    try {
+      toast.info('Generando archivo ZIP, esto puede tomar unos momentos...');
+      await exportDatabaseToZip();
+      toast.success('Respaldo ZIP generado correctamente.');
+      logEvent(LOG.RESPALDO, 'Respaldo ZIP exportado');
+    } catch (err) {
+      toast.error('Error al generar el respaldo ZIP.');
+      logEvent(LOG.ERROR, `ZIP Export: ${err.message}`);
+    }
+  };
+
+  const handleImportZip = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    
+    try {
+      setImporting(true);
+      toast.info('Importando datos, por favor espera...');
+      await importDatabaseFromZip(file);
+      toast.success('Datos importados correctamente.');
+      logEvent(LOG.RESPALDO, 'Datos importados desde ZIP');
+      await load(); // reload data on screen
+    } catch (err) {
+      toast.error(err.message || 'Error al importar los datos.');
+      logEvent(LOG.ERROR, `ZIP Import: ${err.message}`);
+    } finally {
+      setImporting(false);
+      if (e.target) e.target.value = ''; // reset input
     }
   };
 
@@ -269,6 +303,32 @@ export default function Backups() {
           <Button onClick={handleExportInventory} icon={Download} testId="export-inventory-excel-btn">
             Exportar Inventario a Excel
           </Button>
+        </Card>
+
+        <Card className="mb-6" padding="p-5">
+          <h2 className="text-lg font-semibold mb-2" style={{ fontWeight: 600 }}>Respaldo Completo (ZIP)</h2>
+          <p className="text-sm text-[hsl(var(--muted-foreground))] mb-4">
+            Genera un archivo ZIP con toda la base de datos local (evaluaciones, fotos, inventario, etc.) para respaldarlo o importarlo en otro dispositivo. Al importar, los datos existentes se conservan y los nuevos se añaden.
+          </p>
+          <div className="flex flex-col sm:flex-row gap-3">
+            <Button onClick={handleExportZip} icon={Archive} testId="export-zip-btn" className="flex-1">
+              Exportar todo a ZIP
+            </Button>
+            
+            <div className="relative flex-1">
+              <input
+                type="file"
+                accept=".zip"
+                onChange={handleImportZip}
+                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                disabled={importing}
+                title="Seleccionar archivo ZIP para importar"
+              />
+              <Button icon={Upload} variant="secondary" className="w-full" loading={importing} testId="import-zip-btn">
+                {importing ? 'Importando...' : 'Importar desde ZIP'}
+              </Button>
+            </div>
+          </div>
         </Card>
 
         {evals.length === 0 ? (
