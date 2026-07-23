@@ -12,7 +12,7 @@ import { useEquipmentStore } from '../stores/equipment.store';
 import { getCities, getUnitsByCity, getRoomsByUnit, getUnitById, getRoomById } from '../services/catalog.service';
 import { devicesCatalog } from '../catalogs/devices';
 import { logEvent } from '../services/log.service';
-import { Html5Qrcode } from 'html5-qrcode';
+import SerialScanner from '../modules/scanner/SerialScanner';
 import { AnimatePresence, motion } from 'framer-motion';
 
 export default function NewEquipment() {
@@ -47,53 +47,10 @@ export default function NewEquipment() {
   const [ipAddress, setIpAddress] = useState('');
   const [observaciones, setObservaciones] = useState('');
 
-  // Validation errors
+  // Validation errors & scanner state
   const [errors, setErrors] = useState({});
   const [showConfirmModal, setShowConfirmModal] = useState(false);
-
-  const fileInputRef = useRef(null);
-
-  const handleScanFile = async (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    toast.info('Procesando fotografía del código...');
-
-    try {
-      const scanner = new Html5Qrcode('hidden-scanner-mount');
-      const decodedText = await scanner.scanFile(file, false);
-      
-      // Beep sound
-      try {
-        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        const oscillator = audioCtx.createOscillator();
-        const gainNode = audioCtx.createGain();
-        oscillator.connect(gainNode);
-        gainNode.connect(audioCtx.destination);
-        oscillator.type = 'sine';
-        oscillator.frequency.value = 1200;
-        gainNode.gain.setValueAtTime(0, audioCtx.currentTime);
-        gainNode.gain.linearRampToValueAtTime(0.2, audioCtx.currentTime + 0.05);
-        gainNode.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.2);
-        oscillator.start(audioCtx.currentTime);
-        oscillator.stop(audioCtx.currentTime + 0.2);
-      } catch (audioErr) {
-        console.warn("Beep failed:", audioErr);
-      }
-
-      if (navigator.vibrate) {
-        navigator.vibrate(100);
-      }
-
-      setNumeroSerie(decodedText);
-      toast.success(`Código detectado con éxito: ${decodedText}`);
-    } catch (err) {
-      console.error("Barcode scan error:", err);
-      toast.error('No se detectó ningún código legible. Intenta tomar la foto de más cerca, bien enfocada y con buena luz.');
-    } finally {
-      if (e.target) e.target.value = '';
-    }
-  };
+  const [isScannerOpen, setIsScannerOpen] = useState(false);
 
   // Initial load
   useEffect(() => {
@@ -483,21 +440,12 @@ export default function NewEquipment() {
                 variant="secondary"
                 fullWidth={false}
                 className="h-[56px] w-[56px] flex items-center justify-center p-0 rounded-[16px] border border-[hsl(var(--border))]"
-                onClick={() => fileInputRef.current?.click()}
-                title="Tomar foto del número de serie"
+                onClick={() => setIsScannerOpen(true)}
+                title="Escanear número de serie en tiempo real"
                 testId="eq-scan-serial-btn"
               >
                 <Scan className="w-5.5 h-5.5 text-foreground" />
               </Button>
-              <input
-                type="file"
-                accept="image/*"
-                capture="environment"
-                ref={fileInputRef}
-                className="hidden"
-                onChange={handleScanFile}
-              />
-              <div id="hidden-scanner-mount" className="hidden" />
             </div>
           </div>
         </Card>
@@ -634,6 +582,15 @@ export default function NewEquipment() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      <SerialScanner
+        isOpen={isScannerOpen}
+        onClose={() => setIsScannerOpen(false)}
+        onScanSuccess={(serial) => {
+          setNumeroSerie(serial);
+          toast.success(`Número de serie capturado: ${serial}`);
+        }}
+      />
     </div>
   );
 }
