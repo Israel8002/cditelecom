@@ -276,11 +276,18 @@ export default function NewEquipment() {
     if (!selectedRoom) errs.room = 'Selecciona el cuarto.';
     if (!tipo) errs.tipo = 'Selecciona el tipo de equipo.';
     
-    if (!marca) errs.marca = 'Selecciona la marca.';
-    else if (marca === 'OTRO' && !customMarca.trim()) errs.customMarca = 'Escribe la marca personalizada.';
-    
-    if (!modelo) errs.modelo = 'Selecciona el modelo.';
-    else if (modelo === 'OTRO' && !customModelo.trim()) errs.customModelo = 'Escribe el modelo personalizado.';
+    if (!marca) {
+      errs.marca = 'Selecciona la marca.';
+    } else if (marca === 'OTRO') {
+      if (!customMarca.trim()) errs.customMarca = 'Escribe la marca personalizada.';
+      if (!customModelo.trim()) errs.customModelo = 'Escribe el modelo personalizado.';
+    } else {
+      if (!modelo) {
+        errs.modelo = 'Selecciona el modelo.';
+      } else if (modelo === 'OTRO' && !customModelo.trim()) {
+        errs.customModelo = 'Escribe el modelo personalizado.';
+      }
+    }
     
     if (!numeroSerie.trim()) errs.numeroSerie = 'Ingresa el número de serie.';
 
@@ -295,7 +302,7 @@ export default function NewEquipment() {
     }
 
     const itemMarca = marca === 'OTRO' ? customMarca.trim().toUpperCase() : marca;
-    const itemModelo = modelo === 'OTRO' ? customModelo.trim() : modelo;
+    const itemModelo = (modelo === 'OTRO' || marca === 'OTRO') ? customModelo.trim() : modelo;
 
     const data = {
       id: isEdit ? id : `EQ-${selectedRoom}-${Date.now()}`,
