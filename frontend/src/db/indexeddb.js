@@ -74,3 +74,10 @@ export async function dbCount(store) {
   const db = await getDB();
   return db.count(store);
 }
+
+export async function dbClearAll() {
+  const db = await getDB();
+  const tx = db.transaction(Array.from(db.objectStoreNames), 'readwrite');
+  await Promise.all(Array.from(db.objectStoreNames).map((name) => tx.objectStore(name).clear()));
+  await tx.done;
+}

@@ -1,4 +1,4 @@
-import { dbPut, dbGet, dbGetAll, dbDelete, dbGetAllByIndex, dbCount } from '../db/indexeddb';
+import { dbPut, dbGet, dbGetAll, dbDelete, dbGetAllByIndex, dbCount, dbClearAll } from '../db/indexeddb';
 import { uid } from './format';
 
 // ---------------- USUARIO ----------------
@@ -266,4 +266,14 @@ export async function getStorageEstimate() {
     return { usage: e.usage || 0, quota: e.quota || 0 };
   }
   return { usage: 0, quota: 0 };
+}
+
+export async function clearAllData() {
+  await dbClearAll();
+  if (typeof localStorage !== 'undefined') {
+    localStorage.clear();
+  }
+  if (typeof sessionStorage !== 'undefined') {
+    sessionStorage.clear();
+  }
 }

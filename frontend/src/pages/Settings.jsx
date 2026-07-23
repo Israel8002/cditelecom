@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
-import { User, Info, Layers, BadgeInfo } from 'lucide-react';
+import { User, Info, Layers, BadgeInfo, Trash2, ShieldAlert, Download, AlertTriangle } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import PageHeader from '../components/PageHeader';
 import Card from '../components/Card';
 import Input from '../components/Input';
@@ -11,7 +12,8 @@ import BottomNavigation from '../components/BottomNavigation';
 import { useUserStore } from '../stores/user.store';
 import { cities } from '../catalogs/cities';
 import { getUnitsByCity, getCatalogStats } from '../services/catalog.service';
-import { countEvaluations, countPhotos, countBackups, getStorageEstimate } from '../services/storage.service';
+import { countEvaluations, countPhotos, countBackups, getStorageEstimate, clearAllData } from '../services/storage.service';
+import { exportDatabaseToZip } from '../services/importExport.service';
 import { formatBytes } from '../services/format';
 import { appConfig } from '../catalogs/appConfig';
 
@@ -22,6 +24,8 @@ export default function Settings() {
   const save = useUserStore((s) => s.save);
   const [form, setForm] = useState(null);
   const [sys, setSys] = useState({ evals: 0, fotos: 0, backups: 0, usage: 0 });
+  const [showResetModal, setShowResetModal] = useState(false);
+  const [isClearing, setIsClearing] = useState(false);
   const cat = getCatalogStats();
 
   useEffect(() => {
@@ -50,8 +54,49 @@ export default function Settings() {
     toast.success('Datos actualizados');
   };
 
+  const handleBackupAndReset = async () => {
+    setIsClearing(true);
+    try {
+      toast.info('Generando archivo ZIP de respaldo completo...');
+      await exportDatabaseToZip();
+      toast.success('Respaldo ZIP generado correctamente.');
+      
+      // Breve espera para asegurar la descarga del archivo ZIP antes del formateo
+      await new Promise((resolve) => setTimeout(resolve, 1500));
+
+      toast.loading('Limpiando base de datos y configuraciones...');
+      await clearAllData();
+      toast.success('Borrado seguro completado. Reiniciando aplicación...');
+      
+      setTimeout(() => {
+        window.location.href = '/';
+      }, 1000);
+    } catch (err) {
+      console.error('Error durante el respaldo o borrado:', err);
+      toast.error('Ocurrió un error durante el proceso de respaldo y borrado.');
+      setIsClearing(false);
+    }
+  };
+
+  const handleDirectReset = async () => {
+    setIsClearing(true);
+    try {
+      toast.loading('Eliminando todos los datos...');
+      await clearAllData();
+      toast.success('Base de datos limpiada por completo. Reiniciando...');
+      
+      setTimeout(() => {
+        window.location.href = '/';
+      }, 1000);
+    } catch (err) {
+      console.error('Error durante el borrado seguro:', err);
+      toast.error('Ocurrió un error al limpiar la base de datos.');
+      setIsClearing(false);
+    }
+  };
+
   return (
-    <div className="app-shell">
+    <div className="app-shell pb-20">
       <PageHeader title="Configuración" onBack={() => navigate('/dashboard')} />
       <div className="px-6 flex flex-col gap-4">
         {/* Datos del evaluador */}
@@ -84,6 +129,23 @@ export default function Settings() {
           <Rows rows={[['Ciudades', cat.ciudades], ['Unidades', cat.unidades], ['Cuartos', cat.cuartos], ['Preguntas', cat.preguntas]]} />
         </Card>
 
+        {/* Borrado Seguro */}
+        <Card className="border border-destructive/30 bg-destructive/5">
+          <p className="font-semibold mb-2 flex items-center gap-2 text-destructive" style={{ fontWeight: 600 }}>
+            <Trash2 size={18} />Borrado Seguro
+          </p>
+          <p className="text-sm text-[hsl(var(--muted-foreground))] mb-4 leading-relaxed">
+            Elimina permanentemente toda la información registrada (equipos, evaluaciones, fotografías, respaldos y configuración) para dejar la aplicación completamente en cero como la primera vez.
+          </p>
+          <Button
+            variant="destructive"
+            onClick={() => setShowResetModal(true)}
+            testId="btn-borrado-seguro"
+          >
+            Realizar Borrado Seguro de Datos
+          </Button>
+        </Card>
+
         {/* Acerca de */}
         <Card>
           <p className="font-semibold mb-3 flex items-center gap-2" style={{ fontWeight: 600 }}><BadgeInfo size={18} />Acerca de</p>
@@ -98,6 +160,82 @@ export default function Settings() {
           </div>
         </Card>
       </div>
+
+      {/* Modal de confirmación para Borrado Seguro */}
+      <AnimatePresence>
+        {showResetModal && (
+          <motion.div
+            className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => !isClearing && setShowResetModal(false)}
+          >
+            <motion.div
+              className="w-full max-w-md bg-[hsl(var(--card))] rounded-[20px] p-6 flex flex-col gap-4 border border-[hsl(var(--border))] shadow-2xl"
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center gap-3 text-destructive">
+                <div className="p-2.5 rounded-full bg-destructive/10">
+                  <ShieldAlert size={28} />
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold" style={{ fontWeight: 600 }}>Borrado Seguro de Datos</h3>
+                  <p className="text-xs text-[hsl(var(--muted-foreground))]">Reinicio completo a estado inicial</p>
+                </div>
+              </div>
+
+              <p className="text-sm text-foreground leading-relaxed">
+                Esta acción <strong className="text-destructive">eliminará de forma irreversible</strong> todas las evaluaciones, inventarios de equipos, fotografías, respaldos y configuraciones de este dispositivo.
+              </p>
+
+              <div className="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-xs text-amber-400 flex items-start gap-2.5">
+                <AlertTriangle size={20} className="shrink-0 mt-0.5" />
+                <span className="leading-normal">
+                  Puedes generar un respaldo completo en archivo <strong>.ZIP</strong> para decidir dónde guardarlo antes de borrar todo, o puedes omitir el respaldo si prefieres.
+                </span>
+              </div>
+
+              <div className="flex flex-col gap-2.5 mt-2">
+                <Button
+                  onClick={handleBackupAndReset}
+                  disabled={isClearing}
+                  className="bg-emerald-600 hover:bg-emerald-700 text-white flex items-center justify-center gap-2 h-12"
+                  testId="btn-backup-and-reset"
+                >
+                  <Download size={18} />
+                  <span>{isClearing ? 'Procesando respaldo...' : 'Crear Respaldo ZIP y Borrar'}</span>
+                </Button>
+
+                <Button
+                  variant="destructive"
+                  onClick={handleDirectReset}
+                  disabled={isClearing}
+                  className="flex items-center justify-center gap-2 h-11"
+                  testId="btn-skip-backup-reset"
+                >
+                  <Trash2 size={18} />
+                  <span>Omitir Respaldo y Borrar Todo</span>
+                </Button>
+
+                <Button
+                  variant="secondary"
+                  onClick={() => setShowResetModal(false)}
+                  disabled={isClearing}
+                  className="h-11 mt-1"
+                  testId="btn-cancel-reset"
+                >
+                  Cancelar
+                </Button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <BottomNavigation />
     </div>
   );
